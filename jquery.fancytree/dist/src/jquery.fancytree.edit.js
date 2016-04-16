@@ -4,13 +4,13 @@
  * Make node titles editable.
  * (Extension module for jquery.fancytree.js: https://github.com/mar10/fancytree/)
  *
- * Copyright (c) 2008-2015, Martin Wendt (http://wwWendt.de)
+ * Copyright (c) 2008-2016, Martin Wendt (http://wwWendt.de)
  *
  * Released under the MIT license
  * https://github.com/mar10/fancytree/wiki/LicenseInfo
  *
- * @version 2.12.0
- * @date 2015-09-10T20:06
+ * @version 2.17.0
+ * @date 2016-04-11T20:10
  */
 
 ;(function($, window, document, undefined) {
@@ -188,6 +188,7 @@ $.ui.fancytree._FancytreeNodeClass.prototype.editEnd = function(applyChanges, _e
 * @param {Object} [init] NodeData (or simple title string)
 * @alias FancytreeNode#editCreateNode
 * @requires jquery.fancytree.edit.js
+* @since 2.4
 */
 $.ui.fancytree._FancytreeNodeClass.prototype.editCreateNode = function(mode, init){
 	var newNode,

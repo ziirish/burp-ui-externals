@@ -1,5 +1,96 @@
-# 2.12.1-0 / Unreleased
+# 2.17.0-0 / Unreleased
   *
+
+# 2.17.0 / 2016-04-11
+  * [Added]  `node.addClass()`, `.removeClass()`, and `.toggleClass()`
+  * [Added] ext-filter: matcher-callback for `tree.filterNodes()` may now return 
+    `"branch"` and `"skip"`
+  * [Added] ext-filter: new option`nodata` allows to configure a status node for
+    empty results
+  * [Added] `digits` argument to `node.getIndexHier(separator, digits)`.
+  * [Added] tree option `.tabindex`, default is "0". Pass "" to resolve #577.
+  * [DEPRECATED] tree option `.tabbable`. Use `.tabindex` instead
+  * [Added] New option `mode='firstChild'` for `node.moveTo()`
+  * [Added] New option `digits=<int>` for `node.getIndexHier()`
+  * [Fixed] ext-filter: branch mode honors `autoExpand: true`
+  * [Fixed] #584: aria-labelledby ids not unique
+  * Update to jQuery UI 1.11.4
+
+# 2.16.1 / 2016-03-18
+  * [Added] ext-glyph: new icon for 'nodata' status nodes
+  * [Fixed] #575 missing loading icon in non-bootstrap themes.<br>
+    Glyph themes now display status images in icon span (was expander span before).
+
+# 2.16.0 / 2016-03-16
+  * [Added] ext-clones: new method node.setRefKey(refKey)
+  * [Added] modifier class `.fancytree-fade-expander` to be set on container
+  * [Added] ext-dnd: `.dragExpand()` callback to prevent auto-expand
+  * [Improved] load error reporting
+  * [Improved] bootstrap theme icons and style (samples use bootstrap 3.3)
+  * [Improved] status nodes don't have icons
+  * [Improved] pass data argument to `source` callback
+  * [Improved] Handle exceptions inside `postProcess`
+  * [Improved] #568 ext-dnd: Auto-expanding of collapsed nodes should also work 
+    when dropping is not allowed
+  * [Improved] #567 ext-dnd: fix revert position
+  * [Improved] #565 ext-dnd: fix intermediate display of wrong icon (sending 'over' after 'enter')
+  * [Fixed] #569 node.navigate does not return a Promise object
+  * [Fixed] #563 `tree.reactivate(false)` sets fancytree-treefocus and `tree.reactivate(true)` 
+    doesn't set keyboard focus
+  * [Fixed] #562 Node span tag leaks outside table cell
+  * [Fixed] #526 tree.setFocus() does not set keyboard focus
+  * Updated to jQuery 1.12.1
+  * Updated grunt devDependencies
+  * Add jQuery 3.0 beta to test suite
+  * Added LICENSE.txt to dist
+
+# 2.15.0 / 2016-01-11
+  * [Changed] Renamed class `fancytree-statusnode-wait` to `fancytree-statusnode-loading`
+  * [Added] new event `renderStatusColumns`
+  * [DEPRECATED] ext-table option `customStatus`. Use `renderStatusColumns` instead
+  * [Added] new event `clickPaging`
+  * [Added] new mode `nodata` for use with node.setStatus()
+  * [Added] new method `node.addPagingNode()`
+  * [Added] new method `node.replaceWith()`
+  * [Added] new type 'paging' for `node.statusNodeType`
+  * [Added] #542 new method `node.getSelectedNodes()`
+  * [Added] Helper class `glyphicon-spin` to allow rotating loading icon with bootstrap
+  * [Improved] #356: serialize load requests
+  * [Improved] #538: Be more robust if site css defines custom li:before
+  * [Improved] ext-table: Define table row templates in `<tbody>`
+  * [Improved] ext-table: `<thead>` is now optional if `<tbody>` contains `<td>`s
+
+# 2.14.0 / 2015-12-19
+  * [CHANGED] #519 Refactored custom icon configuration:<br>
+    (see also the [theming tutorial](https://github.com/mar10/fancytree/wiki/TutorialTheming))
+    * [Added] `options.icon` option/callback.<br>
+      Valid values are true, false, a string containing a class name or image
+      url, or a callback returning that.
+    * [Changed] `node.icon` option. Valid values are true, false, or a string 
+      containing a class name or image url.<br>
+      This option existed before, but was stored in the `node.data.icon` namespace,
+      and did not accept class names.
+    * [DEPRECATED] `options.iconClass` callback: use `options.icon` instead
+    * [DEPRECATED] `options.icons`: use `options.icon` instead
+    * [DEPRECATED] `node.data.iconclass` option: use `node.icon` instead
+    * [DEPRECATED] `node.data.icon` option: use `node.icon` instead
+  * [Added] `tree.clear()` method.
+  * [Added] #520 ext-persist: new event `beforeRestore`
+  * [Fixed] #533 table-ext: nodeSetExpanded triggers redundant events
+
+# 2.13.0 / 2015-11-16
+  * [Changed] If a node is initalized as `lazy: true`, and `children: []`, 
+    treat it as 'loaded leaf node'.<br>
+    This is consistent with a lazy node that has no children property at all (i.e. 
+    `undefined`). This would issue a lazyLoad event and a resopnse of `[]` would
+    mark the node as leaf node.
+  * [Added] new function $.ui.fancytree.getTree()
+  * [Added] ext-filter methods node.isMatched() and tree.isFilterActive()
+  * [Added] CSS for ext-childcounter badges is now part of the standard themes
+  * [Added] ext-childcounter method node.updateCounter()`
+  * [Fixed] #507 data-hideCheckbox="true" 
+  * [Fixed] #513 activeVisible option does not work on init
+  * [Fixed] #516 ExtPersist requires cookie.js even when not using cookies
 
 # 2.12.0 / 2015-09-10
   * [Changed] Documented `iconClass` callback and changed signature from 
@@ -16,7 +107,7 @@
   * [Fixed] #475 Font color while editing node title with bootstrap skin
   * [Fixed] #484 Glyph plugin: Missing margin-left for span.fancytree-custom-icon
   * [Fixed] #486 node.render(true) moves the node to the end of the list
-  * [Fixed] #489 `focusOnClick` option is ignored for tables, if 'dnd' is listed after 'table' extension
+  * [Fixed] #489 `focusOnClick` option is ignored for tables if 'dnd' is listed after 'table' extension
   * [Fixed] #495 Double clicking on expander with lazy-load causes assertion error
 
 # 2.11.0 / 2015-07-26
@@ -40,7 +131,7 @@
   * [Changed] Undo #340: Revert dist folder layout to v2.9.0, but add
     dist/skin-common.less
 
-# 2.10.0 / 2015-06-26
+# 2.10.0 / 2015-06-26 [YANKED]
   * [Changed] #340: New dist folder layout: moved skin-* folders into src/ folder  
     (**Note:** this change was reverted in v2.10.1)
   * [Improved] Update to jQuery UI 1.11.4, jQuery 1.11.3
@@ -53,7 +144,6 @@
   * [Fixed] #449 After deleting last child, parent node remains expanded
   * [Fixed] #452 destroy not removing nodes with ext-table
   * [Fixed] #457 Autoscroll fails with lazyloading returning empty list
-  * [Improved] Update to jQuery UI 1.11.4, jQuery 1.11.3
 
 # 2.9.0 / 2015-04-19
   * [Changed] ext-filter: `tree.filterNodes(filter, opts)` now accept an `opts`
@@ -138,7 +228,7 @@
   * [Fixed] #316 Fix hasChildren() when children = []
   * [Fixed] #237 ajax LoadError not updated in StatusNode with Table ext
   * [Fixed] #295 loadKeyPath with multiple paths
-  * [Deprecated] node.isRoot(). Use node.isRootNode() instead
+  * [DEPRECATED] node.isRoot(). Use node.isRootNode() instead
 
 # 2.3.0 / 2014-08-17
   * [CHANGED] renamed (undocumented) event 'loaderror' to 'loadError'
@@ -177,8 +267,8 @@
   * [Fixed] #235: D'n'd helper is displaced, when window is scrolled
   * [Fixed] #241: fromDict() does not update node title
   * [Fixed] relative custom imagePath option
-  * [Deprecated] [ext-filter] Use filterNodes() instead of applyFilter()
-  * [Deprecated] [ext-filter] 'leavesOnly' option removed (see filterNodes())
+  * [DEPRECATED] [ext-filter] Use filterNodes() instead of applyFilter()
+  * [DEPRECATED] [ext-filter] 'leavesOnly' option removed (see filterNodes())
 
 
 # 2.0.0 / 2014-05-01
@@ -219,7 +309,7 @@
 
 # 2.0.0-9 / 2014-04-02
   * [Added] New helper method $.ui.fancytree.escapeHtml().
-  * [Added] [ext-clones] new method node,reRegister(key, refKey)
+  * [Added] [ext-clones] new method node.reRegister(key, refKey)
   * [Added] Support for bower.
   * [Added] dist/ folder to repository
   * [Improved] [ext-edit] handles `<`, `>`, ...
