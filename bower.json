@@ -36,9 +36,11 @@
     "datatables.net-responsive": "^2.1.0",
     "datatables.net-responsive-bs": "^2.1.0",
     "datatables.net": "^1.10.12",
-    "datatables.net-bs": "^1.10.12"
+    "datatables.net-bs": "^1.10.12",
+    "fullcalendar": "^3.1.0"
   },
   "resolutions": {
-    "angular": "~1.4.0"
+    "angular": "~1.4.0",
+    "fullcalendar": "^3.1.0"
   }
 }
