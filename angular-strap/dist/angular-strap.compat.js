@@ -1,6 +1,6 @@
 /**
  * angular-strap
- * @version v2.3.9 - 2016-06-10
+ * @version v2.3.12 - 2017-01-26
  * @link http://mgcrea.github.io/angular-strap
  * @author Olivier Louvignes <olivier@mg-crea.com> (https://github.com/mgcrea)
  * @license MIT License, http://www.opensource.org/licenses/MIT
@@ -92,6 +92,20 @@
           evt.preventDefault();
           evt.stopPropagation();
         };
+        $typeahead.$$updateScrollTop = function(container, index) {
+          if (index > -1 && index < container.children.length) {
+            var active = container.children[index];
+            var clientTop = active.offsetTop;
+            var clientBottom = active.offsetTop + active.clientHeight;
+            var highWatermark = container.scrollTop;
+            var lowWatermark = container.scrollTop + container.clientHeight;
+            if (clientBottom >= highWatermark && clientTop < highWatermark) {
+              container.scrollTop = Math.max(0, container.scrollTop - container.clientHeight);
+            } else if (clientBottom > lowWatermark) {
+              container.scrollTop = clientTop;
+            }
+          }
+        };
         $typeahead.$onKeyDown = function(evt) {
           if (!/(38|40|13)/.test(evt.keyCode)) return;
           if ($typeahead.$isVisible() && !(evt.keyCode === 13 && scope.$activeIndex === -1)) {
@@ -107,6 +121,7 @@
           } else if (angular.isUndefined(scope.$activeIndex)) {
             scope.$activeIndex = 0;
           }
+          $typeahead.$$updateScrollTop($typeahead.$element[0], scope.$activeIndex);
           scope.$digest();
         };
         var show = $typeahead.show;
@@ -233,133 +248,6 @@
           options = null;
           typeahead = null;
         });
-      }
-    };
-  } ]);
-  angular.module('mgcrea.ngStrap.tab', []).provider('$bsTab', function() {
-    var defaults = this.defaults = {
-      animation: 'am-fade',
-      template: 'tab/tab.tpl.html',
-      navClass: 'nav-tabs',
-      activeClass: 'active'
-    };
-    var controller = this.controller = function($scope, $element, $attrs) {
-      var self = this;
-      self.$options = angular.copy(defaults);
-      angular.forEach([ 'animation', 'navClass', 'activeClass' ], function(key) {
-        if (angular.isDefined($attrs[key])) self.$options[key] = $attrs[key];
-      });
-      $scope.$navClass = self.$options.navClass;
-      $scope.$activeClass = self.$options.activeClass;
-      self.$panes = $scope.$panes = [];
-      self.$activePaneChangeListeners = self.$viewChangeListeners = [];
-      self.$push = function(pane) {
-        if (angular.isUndefined(self.$panes.$active)) {
-          $scope.$setActive(pane.name || 0);
-        }
-        self.$panes.push(pane);
-      };
-      self.$remove = function(pane) {
-        var index = self.$panes.indexOf(pane);
-        var active = self.$panes.$active;
-        var activeIndex;
-        if (angular.isString(active)) {
-          activeIndex = self.$panes.map(function(pane) {
-            return pane.name;
-          }).indexOf(active);
-        } else {
-          activeIndex = self.$panes.$active;
-        }
-        self.$panes.splice(index, 1);
-        if (index < activeIndex) {
-          activeIndex--;
-        } else if (index === activeIndex && activeIndex === self.$panes.length) {
-          activeIndex--;
-        }
-        if (activeIndex >= 0 && activeIndex < self.$panes.length) {
-          self.$setActive(self.$panes[activeIndex].name || activeIndex);
-        } else {
-          self.$setActive();
-        }
-      };
-      self.$setActive = $scope.$setActive = function(value) {
-        self.$panes.$active = value;
-        self.$activePaneChangeListeners.forEach(function(fn) {
-          fn();
-        });
-      };
-      self.$isActive = $scope.$isActive = function($pane, $index) {
-        return self.$panes.$active === $pane.name || self.$panes.$active === $index;
-      };
-    };
-    this.$get = function() {
-      var $tab = {};
-      $tab.defaults = defaults;
-      $tab.controller = controller;
-      return $tab;
-    };
-  }).directive('bsTabs', ["$window", "$animate", "$bsTab", "$parse", function($window, $animate, $tab, $parse) {
-    var defaults = $tab.defaults;
-    return {
-      require: [ '?ngModel', 'bsTabs' ],
-      transclude: true,
-      scope: true,
-      controller: [ '$scope', '$element', '$attrs', $tab.controller ],
-      templateUrl: function(element, attr) {
-        return attr.template || defaults.template;
-      },
-      link: function postLink(scope, element, attrs, controllers) {
-        var ngModelCtrl = controllers[0];
-        var bsTabsCtrl = controllers[1];
-        if (ngModelCtrl) {
-          bsTabsCtrl.$activePaneChangeListeners.push(function() {
-            ngModelCtrl.$setViewValue(bsTabsCtrl.$panes.$active);
-          });
-          ngModelCtrl.$formatters.push(function(modelValue) {
-            bsTabsCtrl.$setActive(modelValue);
-            return modelValue;
-          });
-        }
-        if (attrs.bsActivePane) {
-          var parsedBsActivePane = $parse(attrs.bsActivePane);
-          bsTabsCtrl.$activePaneChangeListeners.push(function() {
-            parsedBsActivePane.assign(scope, bsTabsCtrl.$panes.$active);
-          });
-          scope.$watch(attrs.bsActivePane, function(newValue, oldValue) {
-            bsTabsCtrl.$setActive(newValue);
-          }, true);
-        }
-      }
-    };
-  } ]).directive('bsPane', ["$window", "$animate", "$sce", function($window, $animate, $sce) {
-    return {
-      require: [ '^?ngModel', '^bsTabs' ],
-      scope: true,
-      link: function postLink(scope, element, attrs, controllers) {
-        var bsTabsCtrl = controllers[1];
-        element.addClass('tab-pane');
-        attrs.$observe('title', function(newValue, oldValue) {
-          scope.title = $sce.trustAsHtml(newValue);
-        });
-        scope.name = attrs.name;
-        if (bsTabsCtrl.$options.animation) {
-          element.addClass(bsTabsCtrl.$options.animation);
-        }
-        attrs.$observe('disabled', function(newValue, oldValue) {
-          scope.disabled = scope.$eval(newValue);
-        });
-        bsTabsCtrl.$push(scope);
-        scope.$on('$destroy', function() {
-          bsTabsCtrl.$remove(scope);
-        });
-        function render() {
-          var index = bsTabsCtrl.$panes.indexOf(scope);
-          $animate[bsTabsCtrl.$isActive(scope, index) ? 'addClass' : 'removeClass'](element, bsTabsCtrl.$options.activeClass);
-        }
-        bsTabsCtrl.$activePaneChangeListeners.push(function() {
-          render();
-        });
-        render();
       }
     };
   } ]);
@@ -575,10 +463,12 @@
           }
           _blur = blur;
           _tipToHide = tipElement;
-          if (angular.version.minor <= 2) {
-            $animate.leave(tipElement, leaveAnimateCallback);
-          } else {
-            $animate.leave(tipElement).then(leaveAnimateCallback);
+          if (tipElement !== null) {
+            if (angular.version.minor <= 2) {
+              $animate.leave(tipElement, leaveAnimateCallback);
+            } else {
+              $animate.leave(tipElement).then(leaveAnimateCallback);
+            }
           }
           $tooltip.$isShown = scope.$isShown = false;
           safeDigest(scope);
@@ -1504,6 +1394,455 @@
       }
     };
   } ]);
+  angular.module('mgcrea.ngStrap.tab', []).provider('$bsTab', function() {
+    var defaults = this.defaults = {
+      animation: 'am-fade',
+      template: 'tab/tab.tpl.html',
+      navClass: 'nav-tabs',
+      activeClass: 'active'
+    };
+    var controller = this.controller = function($scope, $element, $attrs) {
+      var self = this;
+      self.$options = angular.copy(defaults);
+      angular.forEach([ 'animation', 'navClass', 'activeClass' ], function(key) {
+        if (angular.isDefined($attrs[key])) self.$options[key] = $attrs[key];
+      });
+      $scope.$navClass = self.$options.navClass;
+      $scope.$activeClass = self.$options.activeClass;
+      self.$panes = $scope.$panes = [];
+      self.$activePaneChangeListeners = self.$viewChangeListeners = [];
+      self.$push = function(pane) {
+        if (angular.isUndefined(self.$panes.$active)) {
+          $scope.$setActive(pane.name || 0);
+        }
+        self.$panes.push(pane);
+      };
+      self.$remove = function(pane) {
+        var index = self.$panes.indexOf(pane);
+        var active = self.$panes.$active;
+        var activeIndex;
+        if (angular.isString(active)) {
+          activeIndex = self.$panes.map(function(pane) {
+            return pane.name;
+          }).indexOf(active);
+        } else {
+          activeIndex = self.$panes.$active;
+        }
+        self.$panes.splice(index, 1);
+        if (index < activeIndex) {
+          activeIndex--;
+        } else if (index === activeIndex && activeIndex === self.$panes.length) {
+          activeIndex--;
+        }
+        if (activeIndex >= 0 && activeIndex < self.$panes.length) {
+          self.$setActive(self.$panes[activeIndex].name || activeIndex);
+        } else {
+          self.$setActive();
+        }
+      };
+      self.$setActive = $scope.$setActive = function(value) {
+        self.$panes.$active = value;
+        self.$activePaneChangeListeners.forEach(function(fn) {
+          fn();
+        });
+      };
+      self.$isActive = $scope.$isActive = function($pane, $index) {
+        return self.$panes.$active === $pane.name || self.$panes.$active === $index;
+      };
+    };
+    this.$get = function() {
+      var $tab = {};
+      $tab.defaults = defaults;
+      $tab.controller = controller;
+      return $tab;
+    };
+  }).directive('bsTabs', ["$window", "$animate", "$bsTab", "$parse", function($window, $animate, $tab, $parse) {
+    var defaults = $tab.defaults;
+    return {
+      require: [ '?ngModel', 'bsTabs' ],
+      transclude: true,
+      scope: true,
+      controller: [ '$scope', '$element', '$attrs', $tab.controller ],
+      templateUrl: function(element, attr) {
+        return attr.template || defaults.template;
+      },
+      link: function postLink(scope, element, attrs, controllers) {
+        var ngModelCtrl = controllers[0];
+        var bsTabsCtrl = controllers[1];
+        if (ngModelCtrl) {
+          bsTabsCtrl.$activePaneChangeListeners.push(function() {
+            ngModelCtrl.$setViewValue(bsTabsCtrl.$panes.$active);
+          });
+          ngModelCtrl.$formatters.push(function(modelValue) {
+            bsTabsCtrl.$setActive(modelValue);
+            return modelValue;
+          });
+        }
+        if (attrs.bsActivePane) {
+          var parsedBsActivePane = $parse(attrs.bsActivePane);
+          bsTabsCtrl.$activePaneChangeListeners.push(function() {
+            parsedBsActivePane.assign(scope, bsTabsCtrl.$panes.$active);
+          });
+          scope.$watch(attrs.bsActivePane, function(newValue, oldValue) {
+            bsTabsCtrl.$setActive(newValue);
+          }, true);
+        }
+      }
+    };
+  } ]).directive('bsPane', ["$window", "$animate", "$sce", function($window, $animate, $sce) {
+    return {
+      require: [ '^?ngModel', '^bsTabs' ],
+      scope: true,
+      link: function postLink(scope, element, attrs, controllers) {
+        var bsTabsCtrl = controllers[1];
+        element.addClass('tab-pane');
+        attrs.$observe('title', function(newValue, oldValue) {
+          scope.title = $sce.trustAsHtml(newValue);
+        });
+        scope.name = attrs.name;
+        if (bsTabsCtrl.$options.animation) {
+          element.addClass(bsTabsCtrl.$options.animation);
+        }
+        attrs.$observe('disabled', function(newValue, oldValue) {
+          scope.disabled = scope.$eval(newValue);
+        });
+        bsTabsCtrl.$push(scope);
+        scope.$on('$destroy', function() {
+          bsTabsCtrl.$remove(scope);
+        });
+        function render() {
+          var index = bsTabsCtrl.$panes.indexOf(scope);
+          $animate[bsTabsCtrl.$isActive(scope, index) ? 'addClass' : 'removeClass'](element, bsTabsCtrl.$options.activeClass);
+        }
+        bsTabsCtrl.$activePaneChangeListeners.push(function() {
+          render();
+        });
+        render();
+      }
+    };
+  } ]);
+  angular.module('mgcrea.ngStrap.select', [ 'mgcrea.ngStrap.tooltip', 'mgcrea.ngStrap.helpers.parseOptions' ]).provider('$bsSelect', function() {
+    var defaults = this.defaults = {
+      animation: 'am-fade',
+      prefixClass: 'select',
+      prefixEvent: '$select',
+      placement: 'bottom-left',
+      templateUrl: 'select/select.tpl.html',
+      trigger: 'focus',
+      container: false,
+      keyboard: true,
+      html: false,
+      delay: 0,
+      multiple: false,
+      allNoneButtons: false,
+      sort: true,
+      caretHtml: '&nbsp;<span class="caret"></span>',
+      placeholder: 'Choose among the following...',
+      allText: 'All',
+      noneText: 'None',
+      maxLength: 3,
+      maxLengthHtml: 'selected',
+      iconCheckmark: 'glyphicon glyphicon-ok',
+      toggle: false
+    };
+    this.$get = ["$window", "$document", "$rootScope", "$bsTooltip", "$timeout", function($window, $document, $rootScope, $tooltip, $timeout) {
+      var isNative = /(ip[ao]d|iphone|android)/gi.test($window.navigator.userAgent);
+      var isTouch = 'createTouch' in $window.document && isNative;
+      function SelectFactory(element, controller, config) {
+        var $select = {};
+        var options = angular.extend({}, defaults, config);
+        $select = $tooltip(element, options);
+        var scope = $select.$scope;
+        scope.$matches = [];
+        if (options.multiple) {
+          scope.$activeIndex = [];
+        } else {
+          scope.$activeIndex = -1;
+        }
+        scope.$isMultiple = options.multiple;
+        scope.$showAllNoneButtons = options.allNoneButtons && options.multiple;
+        scope.$iconCheckmark = options.iconCheckmark;
+        scope.$allText = options.allText;
+        scope.$noneText = options.noneText;
+        scope.$activate = function(index) {
+          scope.$$postDigest(function() {
+            $select.activate(index);
+          });
+        };
+        scope.$select = function(index, evt) {
+          scope.$$postDigest(function() {
+            $select.select(index);
+          });
+        };
+        scope.$isVisible = function() {
+          return $select.$isVisible();
+        };
+        scope.$isActive = function(index) {
+          return $select.$isActive(index);
+        };
+        scope.$selectAll = function() {
+          for (var i = 0; i < scope.$matches.length; i++) {
+            if (!scope.$isActive(i)) {
+              scope.$select(i);
+            }
+          }
+        };
+        scope.$selectNone = function() {
+          for (var i = 0; i < scope.$matches.length; i++) {
+            if (scope.$isActive(i)) {
+              scope.$select(i);
+            }
+          }
+        };
+        $select.update = function(matches) {
+          scope.$matches = matches;
+          $select.$updateActiveIndex();
+        };
+        $select.activate = function(index) {
+          if (options.multiple) {
+            if ($select.$isActive(index)) {
+              scope.$activeIndex.splice(scope.$activeIndex.indexOf(index), 1);
+            } else {
+              scope.$activeIndex.push(index);
+            }
+            if (options.sort) scope.$activeIndex.sort(function(a, b) {
+              return a - b;
+            });
+          } else {
+            scope.$activeIndex = index;
+          }
+          return scope.$activeIndex;
+        };
+        $select.select = function(index) {
+          if (angular.isUndefined(index) || index < 0 || index >= scope.$matches.length) {
+            return;
+          }
+          var value = scope.$matches[index].value;
+          scope.$apply(function() {
+            $select.activate(index);
+            if (options.multiple) {
+              controller.$setViewValue(scope.$activeIndex.map(function(index) {
+                if (angular.isUndefined(scope.$matches[index])) {
+                  return null;
+                }
+                return scope.$matches[index].value;
+              }));
+            } else {
+              if (options.toggle) {
+                controller.$setViewValue(value === controller.$modelValue ? undefined : value);
+              } else {
+                controller.$setViewValue(value);
+              }
+              $select.hide();
+            }
+          });
+          scope.$emit(options.prefixEvent + '.select', value, index, $select);
+          if (angular.isDefined(options.onSelect) && angular.isFunction(options.onSelect)) {
+            options.onSelect(value, index, $select);
+          }
+        };
+        $select.$updateActiveIndex = function() {
+          if (options.multiple) {
+            if (angular.isArray(controller.$modelValue)) {
+              scope.$activeIndex = controller.$modelValue.map(function(value) {
+                return $select.$getIndex(value);
+              });
+            } else {
+              scope.$activeIndex = [];
+            }
+          } else {
+            if (angular.isDefined(controller.$modelValue) && scope.$matches.length) {
+              scope.$activeIndex = $select.$getIndex(controller.$modelValue);
+            } else {
+              scope.$activeIndex = -1;
+            }
+          }
+        };
+        $select.$isVisible = function() {
+          if (!options.minLength || !controller) {
+            return scope.$matches.length;
+          }
+          return scope.$matches.length && controller.$viewValue.length >= options.minLength;
+        };
+        $select.$isActive = function(index) {
+          if (options.multiple) {
+            return scope.$activeIndex.indexOf(index) !== -1;
+          }
+          return scope.$activeIndex === index;
+        };
+        $select.$getIndex = function(value) {
+          var index;
+          for (index = scope.$matches.length; index--; ) {
+            if (angular.equals(scope.$matches[index].value, value)) break;
+          }
+          return index;
+        };
+        $select.$onMouseDown = function(evt) {
+          evt.preventDefault();
+          evt.stopPropagation();
+          if (isTouch) {
+            var targetEl = angular.element(evt.target);
+            var anchor;
+            if (evt.target.nodeName !== 'A') {
+              var anchorCandidate = targetEl.parent();
+              while (!anchor && anchorCandidate.length > 0) {
+                if (anchorCandidate[0].nodeName === 'A') {
+                  anchor = anchorCandidate;
+                }
+                anchorCandidate = anchorCandidate.parent();
+              }
+            }
+            if (anchor) {
+              angular.element(anchor).triggerHandler('click');
+            } else {
+              targetEl.triggerHandler('click');
+            }
+          }
+        };
+        $select.$onKeyDown = function(evt) {
+          if (!/(9|13|38|40)/.test(evt.keyCode)) return;
+          if (evt.keyCode !== 9) {
+            evt.preventDefault();
+            evt.stopPropagation();
+          }
+          if (options.multiple && evt.keyCode === 9) {
+            return $select.hide();
+          }
+          if (!options.multiple && (evt.keyCode === 13 || evt.keyCode === 9)) {
+            return $select.select(scope.$activeIndex);
+          }
+          if (!options.multiple) {
+            if (evt.keyCode === 38 && scope.$activeIndex > 0) scope.$activeIndex--; else if (evt.keyCode === 38 && scope.$activeIndex < 0) scope.$activeIndex = scope.$matches.length - 1; else if (evt.keyCode === 40 && scope.$activeIndex < scope.$matches.length - 1) scope.$activeIndex++; else if (angular.isUndefined(scope.$activeIndex)) scope.$activeIndex = 0;
+            scope.$digest();
+          }
+        };
+        $select.$isIE = function() {
+          var ua = $window.navigator.userAgent;
+          return ua.indexOf('MSIE ') > 0 || ua.indexOf('Trident/') > 0 || ua.indexOf('Edge/') > 0;
+        };
+        $select.$selectScrollFix = function(e) {
+          if ($document[0].activeElement.tagName === 'UL') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            e.target.focus();
+          }
+        };
+        var _show = $select.show;
+        $select.show = function() {
+          _show();
+          if (options.multiple) {
+            $select.$element.addClass('select-multiple');
+          }
+          $timeout(function() {
+            $select.$element.on(isTouch ? 'touchstart' : 'mousedown', $select.$onMouseDown);
+            if (options.keyboard) {
+              element.on('keydown', $select.$onKeyDown);
+            }
+          }, 0, false);
+        };
+        var _hide = $select.hide;
+        $select.hide = function() {
+          if (!options.multiple && angular.isUndefined(controller.$modelValue)) {
+            scope.$activeIndex = -1;
+          }
+          $select.$element.off(isTouch ? 'touchstart' : 'mousedown', $select.$onMouseDown);
+          if (options.keyboard) {
+            element.off('keydown', $select.$onKeyDown);
+          }
+          _hide(true);
+        };
+        return $select;
+      }
+      SelectFactory.defaults = defaults;
+      return SelectFactory;
+    } ];
+  }).directive('bsSelect', ["$window", "$parse", "$q", "$bsSelect", "$bsParseOptions", function($window, $parse, $q, $select, $parseOptions) {
+    var defaults = $select.defaults;
+    return {
+      restrict: 'EAC',
+      require: 'ngModel',
+      link: function postLink(scope, element, attr, controller) {
+        var options = {
+          scope: scope,
+          placeholder: defaults.placeholder
+        };
+        angular.forEach([ 'template', 'templateUrl', 'controller', 'controllerAs', 'placement', 'container', 'delay', 'trigger', 'keyboard', 'html', 'animation', 'placeholder', 'allNoneButtons', 'maxLength', 'maxLengthHtml', 'allText', 'noneText', 'iconCheckmark', 'autoClose', 'id', 'sort', 'caretHtml', 'prefixClass', 'prefixEvent', 'toggle' ], function(key) {
+          if (angular.isDefined(attr[key])) options[key] = attr[key];
+        });
+        var falseValueRegExp = /^(false|0|)$/i;
+        angular.forEach([ 'html', 'container', 'allNoneButtons', 'sort' ], function(key) {
+          if (angular.isDefined(attr[key]) && falseValueRegExp.test(attr[key])) {
+            options[key] = false;
+          }
+        });
+        angular.forEach([ 'onBeforeShow', 'onShow', 'onBeforeHide', 'onHide', 'onSelect' ], function(key) {
+          var bsKey = 'bs' + key.charAt(0).toUpperCase() + key.slice(1);
+          if (angular.isDefined(attr[bsKey])) {
+            options[key] = scope.$eval(attr[bsKey]);
+          }
+        });
+        var dataMultiple = element.attr('data-multiple');
+        if (angular.isDefined(dataMultiple)) {
+          if (falseValueRegExp.test(dataMultiple)) {
+            options.multiple = false;
+          } else {
+            options.multiple = dataMultiple;
+          }
+        }
+        if (element[0].nodeName.toLowerCase() === 'select') {
+          var inputEl = element;
+          inputEl.css('display', 'none');
+          element = angular.element('<button type="button" class="btn btn-default"></button>');
+          inputEl.after(element);
+        }
+        var parsedOptions = $parseOptions(attr.bsOptions);
+        var select = $select(element, controller, options);
+        if (select.$isIE()) {
+          element[0].addEventListener('blur', select.$selectScrollFix);
+        }
+        var watchedOptions = parsedOptions.$match[7].replace(/\|.+/, '').trim();
+        scope.$watch(watchedOptions, function(newValue, oldValue) {
+          parsedOptions.valuesFn(scope, controller).then(function(values) {
+            select.update(values);
+            controller.$render();
+          });
+        }, true);
+        scope.$watch(attr.ngModel, function(newValue, oldValue) {
+          select.$updateActiveIndex();
+          controller.$render();
+        }, true);
+        controller.$render = function() {
+          var selected;
+          var index;
+          if (options.multiple && angular.isArray(controller.$modelValue)) {
+            selected = controller.$modelValue.map(function(value) {
+              index = select.$getIndex(value);
+              return index !== -1 ? select.$scope.$matches[index].label : false;
+            }).filter(angular.isDefined);
+            if (selected.length > (options.maxLength || defaults.maxLength)) {
+              selected = selected.length + ' ' + (options.maxLengthHtml || defaults.maxLengthHtml);
+            } else {
+              selected = selected.join(', ');
+            }
+          } else {
+            index = select.$getIndex(controller.$modelValue);
+            selected = index !== -1 ? select.$scope.$matches[index].label : false;
+          }
+          element.html((selected || options.placeholder) + (options.caretHtml || defaults.caretHtml));
+        };
+        if (options.multiple) {
+          controller.$isEmpty = function(value) {
+            return !value || value.length === 0;
+          };
+        }
+        scope.$on('$destroy', function() {
+          if (select) select.destroy();
+          options = null;
+          select = null;
+        });
+      }
+    };
+  } ]);
   angular.module('mgcrea.ngStrap.scrollspy', [ 'mgcrea.ngStrap.helpers.debounce', 'mgcrea.ngStrap.helpers.dimensions' ]).provider('$bsScrollspy', function() {
     var spies = this.$$spies = {};
     var defaults = this.defaults = {
@@ -1678,314 +2017,6 @@
       }
     };
   } ]);
-  angular.module('mgcrea.ngStrap.select', [ 'mgcrea.ngStrap.tooltip', 'mgcrea.ngStrap.helpers.parseOptions' ]).provider('$bsSelect', function() {
-    var defaults = this.defaults = {
-      animation: 'am-fade',
-      prefixClass: 'select',
-      prefixEvent: '$select',
-      placement: 'bottom-left',
-      templateUrl: 'select/select.tpl.html',
-      trigger: 'focus',
-      container: false,
-      keyboard: true,
-      html: false,
-      delay: 0,
-      multiple: false,
-      allNoneButtons: false,
-      sort: true,
-      caretHtml: '&nbsp;<span class="caret"></span>',
-      placeholder: 'Choose among the following...',
-      allText: 'All',
-      noneText: 'None',
-      maxLength: 3,
-      maxLengthHtml: 'selected',
-      iconCheckmark: 'glyphicon glyphicon-ok',
-      toggle: false
-    };
-    this.$get = ["$window", "$document", "$rootScope", "$bsTooltip", "$timeout", function($window, $document, $rootScope, $tooltip, $timeout) {
-      var isNative = /(ip[ao]d|iphone|android)/gi.test($window.navigator.userAgent);
-      var isTouch = 'createTouch' in $window.document && isNative;
-      function SelectFactory(element, controller, config) {
-        var $select = {};
-        var options = angular.extend({}, defaults, config);
-        $select = $tooltip(element, options);
-        var scope = $select.$scope;
-        scope.$matches = [];
-        if (options.multiple) {
-          scope.$activeIndex = [];
-        } else {
-          scope.$activeIndex = -1;
-        }
-        scope.$isMultiple = options.multiple;
-        scope.$showAllNoneButtons = options.allNoneButtons && options.multiple;
-        scope.$iconCheckmark = options.iconCheckmark;
-        scope.$allText = options.allText;
-        scope.$noneText = options.noneText;
-        scope.$activate = function(index) {
-          scope.$$postDigest(function() {
-            $select.activate(index);
-          });
-        };
-        scope.$select = function(index, evt) {
-          scope.$$postDigest(function() {
-            $select.select(index);
-          });
-        };
-        scope.$isVisible = function() {
-          return $select.$isVisible();
-        };
-        scope.$isActive = function(index) {
-          return $select.$isActive(index);
-        };
-        scope.$selectAll = function() {
-          for (var i = 0; i < scope.$matches.length; i++) {
-            if (!scope.$isActive(i)) {
-              scope.$select(i);
-            }
-          }
-        };
-        scope.$selectNone = function() {
-          for (var i = 0; i < scope.$matches.length; i++) {
-            if (scope.$isActive(i)) {
-              scope.$select(i);
-            }
-          }
-        };
-        $select.update = function(matches) {
-          scope.$matches = matches;
-          $select.$updateActiveIndex();
-        };
-        $select.activate = function(index) {
-          if (options.multiple) {
-            if ($select.$isActive(index)) {
-              scope.$activeIndex.splice(scope.$activeIndex.indexOf(index), 1);
-            } else {
-              scope.$activeIndex.push(index);
-            }
-            if (options.sort) scope.$activeIndex.sort(function(a, b) {
-              return a - b;
-            });
-          } else {
-            scope.$activeIndex = index;
-          }
-          return scope.$activeIndex;
-        };
-        $select.select = function(index) {
-          if (angular.isUndefined(index) || index < 0 || index >= scope.$matches.length) {
-            return;
-          }
-          var value = scope.$matches[index].value;
-          scope.$apply(function() {
-            $select.activate(index);
-            if (options.multiple) {
-              controller.$setViewValue(scope.$activeIndex.map(function(index) {
-                if (angular.isUndefined(scope.$matches[index])) {
-                  return null;
-                }
-                return scope.$matches[index].value;
-              }));
-            } else {
-              if (options.toggle) {
-                controller.$setViewValue(value === controller.$modelValue ? undefined : value);
-              } else {
-                controller.$setViewValue(value);
-              }
-              $select.hide();
-            }
-          });
-          scope.$emit(options.prefixEvent + '.select', value, index, $select);
-          if (angular.isDefined(options.onSelect) && angular.isFunction(options.onSelect)) {
-            options.onSelect(value, index, $select);
-          }
-        };
-        $select.$updateActiveIndex = function() {
-          if (options.multiple) {
-            if (angular.isArray(controller.$modelValue)) {
-              scope.$activeIndex = controller.$modelValue.map(function(value) {
-                return $select.$getIndex(value);
-              });
-            } else {
-              scope.$activeIndex = [];
-            }
-          } else {
-            if (angular.isDefined(controller.$modelValue) && scope.$matches.length) {
-              scope.$activeIndex = $select.$getIndex(controller.$modelValue);
-            } else {
-              scope.$activeIndex = -1;
-            }
-          }
-        };
-        $select.$isVisible = function() {
-          if (!options.minLength || !controller) {
-            return scope.$matches.length;
-          }
-          return scope.$matches.length && controller.$viewValue.length >= options.minLength;
-        };
-        $select.$isActive = function(index) {
-          if (options.multiple) {
-            return scope.$activeIndex.indexOf(index) !== -1;
-          }
-          return scope.$activeIndex === index;
-        };
-        $select.$getIndex = function(value) {
-          var index;
-          for (index = scope.$matches.length; index--; ) {
-            if (angular.equals(scope.$matches[index].value, value)) break;
-          }
-          return index;
-        };
-        $select.$onMouseDown = function(evt) {
-          evt.preventDefault();
-          evt.stopPropagation();
-          if (isTouch) {
-            var targetEl = angular.element(evt.target);
-            targetEl.triggerHandler('click');
-          }
-        };
-        $select.$onKeyDown = function(evt) {
-          if (!/(9|13|38|40)/.test(evt.keyCode)) return;
-          if (evt.keyCode !== 9) {
-            evt.preventDefault();
-            evt.stopPropagation();
-          }
-          if (options.multiple && evt.keyCode === 9) {
-            return $select.hide();
-          }
-          if (!options.multiple && (evt.keyCode === 13 || evt.keyCode === 9)) {
-            return $select.select(scope.$activeIndex);
-          }
-          if (!options.multiple) {
-            if (evt.keyCode === 38 && scope.$activeIndex > 0) scope.$activeIndex--; else if (evt.keyCode === 38 && scope.$activeIndex < 0) scope.$activeIndex = scope.$matches.length - 1; else if (evt.keyCode === 40 && scope.$activeIndex < scope.$matches.length - 1) scope.$activeIndex++; else if (angular.isUndefined(scope.$activeIndex)) scope.$activeIndex = 0;
-            scope.$digest();
-          }
-        };
-        $select.$isIE = function() {
-          var ua = $window.navigator.userAgent;
-          return ua.indexOf('MSIE ') > 0 || ua.indexOf('Trident/') > 0 || ua.indexOf('Edge/') > 0;
-        };
-        $select.$selectScrollFix = function(e) {
-          if ($document[0].activeElement.tagName === 'UL') {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            e.target.focus();
-          }
-        };
-        var _show = $select.show;
-        $select.show = function() {
-          _show();
-          if (options.multiple) {
-            $select.$element.addClass('select-multiple');
-          }
-          $timeout(function() {
-            $select.$element.on(isTouch ? 'touchstart' : 'mousedown', $select.$onMouseDown);
-            if (options.keyboard) {
-              element.on('keydown', $select.$onKeyDown);
-            }
-          }, 0, false);
-        };
-        var _hide = $select.hide;
-        $select.hide = function() {
-          if (!options.multiple && angular.isUndefined(controller.$modelValue)) {
-            scope.$activeIndex = -1;
-          }
-          $select.$element.off(isTouch ? 'touchstart' : 'mousedown', $select.$onMouseDown);
-          if (options.keyboard) {
-            element.off('keydown', $select.$onKeyDown);
-          }
-          _hide(true);
-        };
-        return $select;
-      }
-      SelectFactory.defaults = defaults;
-      return SelectFactory;
-    } ];
-  }).directive('bsSelect', ["$window", "$parse", "$q", "$bsSelect", "$bsParseOptions", function($window, $parse, $q, $select, $parseOptions) {
-    var defaults = $select.defaults;
-    return {
-      restrict: 'EAC',
-      require: 'ngModel',
-      link: function postLink(scope, element, attr, controller) {
-        var options = {
-          scope: scope,
-          placeholder: defaults.placeholder
-        };
-        angular.forEach([ 'template', 'templateUrl', 'controller', 'controllerAs', 'placement', 'container', 'delay', 'trigger', 'keyboard', 'html', 'animation', 'placeholder', 'allNoneButtons', 'maxLength', 'maxLengthHtml', 'allText', 'noneText', 'iconCheckmark', 'autoClose', 'id', 'sort', 'caretHtml', 'prefixClass', 'prefixEvent', 'toggle' ], function(key) {
-          if (angular.isDefined(attr[key])) options[key] = attr[key];
-        });
-        var falseValueRegExp = /^(false|0|)$/i;
-        angular.forEach([ 'html', 'container', 'allNoneButtons', 'sort' ], function(key) {
-          if (angular.isDefined(attr[key]) && falseValueRegExp.test(attr[key])) {
-            options[key] = false;
-          }
-        });
-        angular.forEach([ 'onBeforeShow', 'onShow', 'onBeforeHide', 'onHide', 'onSelect' ], function(key) {
-          var bsKey = 'bs' + key.charAt(0).toUpperCase() + key.slice(1);
-          if (angular.isDefined(attr[bsKey])) {
-            options[key] = scope.$eval(attr[bsKey]);
-          }
-        });
-        var dataMultiple = element.attr('data-multiple');
-        if (angular.isDefined(dataMultiple)) {
-          if (falseValueRegExp.test(dataMultiple)) {
-            options.multiple = false;
-          } else {
-            options.multiple = dataMultiple;
-          }
-        }
-        if (element[0].nodeName.toLowerCase() === 'select') {
-          var inputEl = element;
-          inputEl.css('display', 'none');
-          element = angular.element('<button type="button" class="btn btn-default"></button>');
-          inputEl.after(element);
-        }
-        var parsedOptions = $parseOptions(attr.bsOptions);
-        var select = $select(element, controller, options);
-        if (select.$isIE()) {
-          element[0].addEventListener('blur', select.$selectScrollFix);
-        }
-        var watchedOptions = parsedOptions.$match[7].replace(/\|.+/, '').trim();
-        scope.$watch(watchedOptions, function(newValue, oldValue) {
-          parsedOptions.valuesFn(scope, controller).then(function(values) {
-            select.update(values);
-            controller.$render();
-          });
-        }, true);
-        scope.$watch(attr.ngModel, function(newValue, oldValue) {
-          select.$updateActiveIndex();
-          controller.$render();
-        }, true);
-        controller.$render = function() {
-          var selected;
-          var index;
-          if (options.multiple && angular.isArray(controller.$modelValue)) {
-            selected = controller.$modelValue.map(function(value) {
-              index = select.$getIndex(value);
-              return index !== -1 ? select.$scope.$matches[index].label : false;
-            }).filter(angular.isDefined);
-            if (selected.length > (options.maxLength || defaults.maxLength)) {
-              selected = selected.length + ' ' + (options.maxLengthHtml || defaults.maxLengthHtml);
-            } else {
-              selected = selected.join(', ');
-            }
-          } else {
-            index = select.$getIndex(controller.$modelValue);
-            selected = index !== -1 ? select.$scope.$matches[index].label : false;
-          }
-          element.html((selected || options.placeholder) + (options.caretHtml || defaults.caretHtml));
-        };
-        if (options.multiple) {
-          controller.$isEmpty = function(value) {
-            return !value || value.length === 0;
-          };
-        }
-        scope.$on('$destroy', function() {
-          if (select) select.destroy();
-          options = null;
-          select = null;
-        });
-      }
-    };
-  } ]);
   angular.module('mgcrea.ngStrap.popover', [ 'mgcrea.ngStrap.tooltip' ]).provider('$bsPopover', function() {
     var defaults = this.defaults = {
       animation: 'am-fade',
@@ -2024,7 +2055,7 @@
         var options = {
           scope: scope
         };
-        angular.forEach([ 'template', 'templateUrl', 'controller', 'controllerAs', 'contentTemplate', 'placement', 'container', 'delay', 'trigger', 'html', 'animation', 'customClass', 'autoClose', 'id', 'prefixClass', 'prefixEvent' ], function(key) {
+        angular.forEach([ 'template', 'templateUrl', 'controller', 'controllerAs', 'contentTemplate', 'placement', 'container', 'delay', 'trigger', 'html', 'animation', 'customClass', 'autoClose', 'id', 'prefixClass', 'prefixEvent', 'bsEnabled' ], function(key) {
           if (angular.isDefined(attr[key])) options[key] = attr[key];
         });
         var falseValueRegExp = /^(false|0|)$/i;
@@ -2079,6 +2110,17 @@
               popover.show();
             } else {
               popover.hide();
+            }
+          });
+        }
+        if (attr.bsEnabled) {
+          scope.$watch(attr.bsEnabled, function(newValue) {
+            if (!popover || !angular.isDefined(newValue)) return;
+            if (angular.isString(newValue)) newValue = !!newValue.match(/true|1|,?(popover),?/i);
+            if (newValue === false) {
+              popover.setEnabled(false);
+            } else {
+              popover.setEnabled(true);
             }
           });
         }
@@ -2155,7 +2197,8 @@
       keyboard: true,
       html: false,
       show: true,
-      size: null
+      size: null,
+      zIndex: null
     };
     this.$get = ["$window", "$rootScope", "$bsCompiler", "$animate", "$timeout", "$sce", "bsDimensions", function($window, $rootScope, $bsCompiler, $animate, $timeout, $sce, dimensions) {
       var forEach = angular.forEach;
@@ -2175,6 +2218,10 @@
         var scope = $modal.$scope = options.scope && options.scope.$new() || $rootScope.$new();
         if (!options.element && !options.container) {
           options.container = 'body';
+        }
+        if (options.zIndex) {
+          dialogBaseZindex = parseInt(options.zIndex, 10);
+          backdropBaseZindex = dialogBaseZindex - 10;
         }
         $modal.$id = options.id || options.element && options.element.attr('id') || '';
         forEach([ 'title', 'content' ], function(key) {
@@ -2329,7 +2376,9 @@
           if (angular.isDefined(options.onHide) && angular.isFunction(options.onHide)) {
             options.onHide($modal);
           }
-          bodyElement.removeClass(options.prefixClass + '-open');
+          if (findElement('.modal').length <= 0) {
+            bodyElement.removeClass(options.prefixClass + '-open');
+          }
           if (options.animation) {
             bodyElement.removeClass(options.prefixClass + '-with-' + options.animation);
           }
@@ -2419,7 +2468,7 @@
           element: element,
           show: false
         };
-        angular.forEach([ 'template', 'templateUrl', 'controller', 'controllerAs', 'contentTemplate', 'placement', 'backdrop', 'keyboard', 'html', 'container', 'animation', 'backdropAnimation', 'id', 'prefixEvent', 'prefixClass', 'customClass', 'modalClass', 'size' ], function(key) {
+        angular.forEach([ 'template', 'templateUrl', 'controller', 'controllerAs', 'contentTemplate', 'placement', 'backdrop', 'keyboard', 'html', 'container', 'animation', 'backdropAnimation', 'id', 'prefixEvent', 'prefixClass', 'customClass', 'modalClass', 'size', 'zIndex' ], function(key) {
           if (angular.isDefined(attr[key])) options[key] = attr[key];
         });
         if (options.modalClass) {
@@ -2458,130 +2507,6 @@
           options = null;
           modal = null;
         });
-      }
-    };
-  } ]);
-  angular.module('mgcrea.ngStrap.dropdown', [ 'mgcrea.ngStrap.tooltip' ]).provider('$bsDropdown', function() {
-    var defaults = this.defaults = {
-      animation: 'am-fade',
-      prefixClass: 'dropdown',
-      prefixEvent: 'dropdown',
-      placement: 'bottom-left',
-      templateUrl: 'dropdown/dropdown.tpl.html',
-      trigger: 'click',
-      container: false,
-      keyboard: true,
-      html: false,
-      delay: 0
-    };
-    this.$get = ["$window", "$rootScope", "$bsTooltip", "$timeout", function($window, $rootScope, $tooltip, $timeout) {
-      var bodyEl = angular.element($window.document.body);
-      var matchesSelector = Element.prototype.matchesSelector || Element.prototype.webkitMatchesSelector || Element.prototype.mozMatchesSelector || Element.prototype.msMatchesSelector || Element.prototype.oMatchesSelector;
-      function DropdownFactory(element, config) {
-        var $dropdown = {};
-        var options = angular.extend({}, defaults, config);
-        $dropdown.$scope = options.scope && options.scope.$new() || $rootScope.$new();
-        $dropdown = $tooltip(element, options);
-        var parentEl = element.parent();
-        $dropdown.$onKeyDown = function(evt) {
-          if (!/(38|40)/.test(evt.keyCode)) return;
-          evt.preventDefault();
-          evt.stopPropagation();
-          var items = angular.element($dropdown.$element[0].querySelectorAll('li:not(.divider) a'));
-          if (!items.length) return;
-          var index;
-          angular.forEach(items, function(el, i) {
-            if (matchesSelector && matchesSelector.call(el, ':focus')) index = i;
-          });
-          if (evt.keyCode === 38 && index > 0) index--; else if (evt.keyCode === 40 && index < items.length - 1) index++; else if (angular.isUndefined(index)) index = 0;
-          items.eq(index)[0].focus();
-        };
-        var show = $dropdown.show;
-        $dropdown.show = function() {
-          show();
-          $timeout(function() {
-            if (options.keyboard && $dropdown.$element) $dropdown.$element.on('keydown', $dropdown.$onKeyDown);
-            bodyEl.on('click', onBodyClick);
-          }, 0, false);
-          if (parentEl.hasClass('dropdown')) parentEl.addClass('open');
-        };
-        var hide = $dropdown.hide;
-        $dropdown.hide = function() {
-          if (!$dropdown.$isShown) return;
-          if (options.keyboard && $dropdown.$element) $dropdown.$element.off('keydown', $dropdown.$onKeyDown);
-          bodyEl.off('click', onBodyClick);
-          if (parentEl.hasClass('dropdown')) parentEl.removeClass('open');
-          hide();
-        };
-        var destroy = $dropdown.destroy;
-        $dropdown.destroy = function() {
-          bodyEl.off('click', onBodyClick);
-          destroy();
-        };
-        function onBodyClick(evt) {
-          if (evt.target === element[0]) return;
-          return evt.target !== element[0] && $dropdown.hide();
-        }
-        return $dropdown;
-      }
-      return DropdownFactory;
-    } ];
-  }).directive('bsDropdown', ["$window", "$sce", "$bsDropdown", function($window, $sce, $dropdown) {
-    return {
-      restrict: 'EAC',
-      scope: true,
-      compile: function(tElement, tAttrs) {
-        if (!tAttrs.bsDropdown) {
-          var nextSibling = tElement[0].nextSibling;
-          while (nextSibling && nextSibling.nodeType !== 1) {
-            nextSibling = nextSibling.nextSibling;
-          }
-          if (nextSibling && nextSibling.className.split(' ').indexOf('dropdown-menu') >= 0) {
-            tAttrs.template = nextSibling.outerHTML;
-            tAttrs.templateUrl = undefined;
-            nextSibling.parentNode.removeChild(nextSibling);
-          }
-        }
-        return function postLink(scope, element, attr) {
-          var options = {
-            scope: scope
-          };
-          angular.forEach([ 'template', 'templateUrl', 'controller', 'controllerAs', 'placement', 'container', 'delay', 'trigger', 'keyboard', 'html', 'animation', 'id', 'autoClose' ], function(key) {
-            if (angular.isDefined(tAttrs[key])) options[key] = tAttrs[key];
-          });
-          var falseValueRegExp = /^(false|0|)$/i;
-          angular.forEach([ 'html', 'container' ], function(key) {
-            if (angular.isDefined(attr[key]) && falseValueRegExp.test(attr[key])) options[key] = false;
-          });
-          angular.forEach([ 'onBeforeShow', 'onShow', 'onBeforeHide', 'onHide' ], function(key) {
-            var bsKey = 'bs' + key.charAt(0).toUpperCase() + key.slice(1);
-            if (angular.isDefined(attr[bsKey])) {
-              options[key] = scope.$eval(attr[bsKey]);
-            }
-          });
-          if (attr.bsDropdown) {
-            scope.$watch(attr.bsDropdown, function(newValue, oldValue) {
-              scope.content = newValue;
-            }, true);
-          }
-          var dropdown = $dropdown(element, options);
-          if (attr.bsShow) {
-            scope.$watch(attr.bsShow, function(newValue, oldValue) {
-              if (!dropdown || !angular.isDefined(newValue)) return;
-              if (angular.isString(newValue)) newValue = !!newValue.match(/true|,?(dropdown),?/i);
-              if (newValue === true) {
-                dropdown.show();
-              } else {
-                dropdown.hide();
-              }
-            });
-          }
-          scope.$on('$destroy', function() {
-            if (dropdown) dropdown.destroy();
-            options = null;
-            dropdown = null;
-          });
-        };
       }
     };
   } ]);
@@ -3152,8 +3077,8 @@
       var template = options.template || '';
       var controller = options.controller;
       var controllerAs = options.controllerAs;
-      var resolve = angular.copy(options.resolve || {});
-      var locals = angular.copy(options.locals || {});
+      var resolve = options.resolve || {};
+      var locals = options.locals || {};
       var transformTemplate = options.transformTemplate || angular.identity;
       var bindToController = options.bindToController;
       angular.forEach(resolve, function(value, key) {
@@ -3228,6 +3153,248 @@
       });
     }
   }
+  angular.module('mgcrea.ngStrap.dropdown', [ 'mgcrea.ngStrap.tooltip' ]).provider('$bsDropdown', function() {
+    var defaults = this.defaults = {
+      animation: 'am-fade',
+      prefixClass: 'dropdown',
+      prefixEvent: 'dropdown',
+      placement: 'bottom-left',
+      templateUrl: 'dropdown/dropdown.tpl.html',
+      trigger: 'click',
+      container: false,
+      keyboard: true,
+      html: false,
+      delay: 0
+    };
+    this.$get = ["$window", "$rootScope", "$bsTooltip", "$timeout", function($window, $rootScope, $tooltip, $timeout) {
+      var bodyEl = angular.element($window.document.body);
+      var matchesSelector = Element.prototype.matchesSelector || Element.prototype.webkitMatchesSelector || Element.prototype.mozMatchesSelector || Element.prototype.msMatchesSelector || Element.prototype.oMatchesSelector;
+      function DropdownFactory(element, config) {
+        var $dropdown = {};
+        var options = angular.extend({}, defaults, config);
+        $dropdown.$scope = options.scope && options.scope.$new() || $rootScope.$new();
+        $dropdown = $tooltip(element, options);
+        var parentEl = element.parent();
+        $dropdown.$onKeyDown = function(evt) {
+          if (!/(38|40)/.test(evt.keyCode)) return;
+          evt.preventDefault();
+          evt.stopPropagation();
+          var items = angular.element($dropdown.$element[0].querySelectorAll('li:not(.divider) a'));
+          if (!items.length) return;
+          var index;
+          angular.forEach(items, function(el, i) {
+            if (matchesSelector && matchesSelector.call(el, ':focus')) index = i;
+          });
+          if (evt.keyCode === 38 && index > 0) index--; else if (evt.keyCode === 40 && index < items.length - 1) index++; else if (angular.isUndefined(index)) index = 0;
+          items.eq(index)[0].focus();
+        };
+        var show = $dropdown.show;
+        $dropdown.show = function() {
+          show();
+          $timeout(function() {
+            if (options.keyboard && $dropdown.$element) $dropdown.$element.on('keydown', $dropdown.$onKeyDown);
+            bodyEl.on('click', onBodyClick);
+          }, 0, false);
+          if (parentEl.hasClass('dropdown')) parentEl.addClass('open');
+        };
+        var hide = $dropdown.hide;
+        $dropdown.hide = function() {
+          if (!$dropdown.$isShown) return;
+          if (options.keyboard && $dropdown.$element) $dropdown.$element.off('keydown', $dropdown.$onKeyDown);
+          bodyEl.off('click', onBodyClick);
+          if (parentEl.hasClass('dropdown')) parentEl.removeClass('open');
+          hide();
+        };
+        var destroy = $dropdown.destroy;
+        $dropdown.destroy = function() {
+          bodyEl.off('click', onBodyClick);
+          destroy();
+        };
+        function onBodyClick(evt) {
+          if (evt.target === element[0]) return;
+          return evt.target !== element[0] && $dropdown.hide();
+        }
+        return $dropdown;
+      }
+      return DropdownFactory;
+    } ];
+  }).directive('bsDropdown', ["$window", "$sce", "$bsDropdown", function($window, $sce, $dropdown) {
+    return {
+      restrict: 'EAC',
+      scope: true,
+      compile: function(tElement, tAttrs) {
+        if (!tAttrs.bsDropdown) {
+          var nextSibling = tElement[0].nextSibling;
+          while (nextSibling && nextSibling.nodeType !== 1) {
+            nextSibling = nextSibling.nextSibling;
+          }
+          if (nextSibling && nextSibling.className.split(' ').indexOf('dropdown-menu') >= 0) {
+            tAttrs.template = nextSibling.outerHTML;
+            tAttrs.templateUrl = undefined;
+            nextSibling.parentNode.removeChild(nextSibling);
+          }
+        }
+        return function postLink(scope, element, attr) {
+          var options = {
+            scope: scope
+          };
+          angular.forEach([ 'template', 'templateUrl', 'controller', 'controllerAs', 'placement', 'container', 'delay', 'trigger', 'keyboard', 'html', 'animation', 'id', 'autoClose' ], function(key) {
+            if (angular.isDefined(tAttrs[key])) options[key] = tAttrs[key];
+          });
+          var falseValueRegExp = /^(false|0|)$/i;
+          angular.forEach([ 'html', 'container' ], function(key) {
+            if (angular.isDefined(attr[key]) && falseValueRegExp.test(attr[key])) options[key] = false;
+          });
+          angular.forEach([ 'onBeforeShow', 'onShow', 'onBeforeHide', 'onHide' ], function(key) {
+            var bsKey = 'bs' + key.charAt(0).toUpperCase() + key.slice(1);
+            if (angular.isDefined(attr[bsKey])) {
+              options[key] = scope.$eval(attr[bsKey]);
+            }
+          });
+          if (attr.bsDropdown) {
+            scope.$watch(attr.bsDropdown, function(newValue, oldValue) {
+              scope.content = newValue;
+            }, true);
+          }
+          var dropdown = $dropdown(element, options);
+          if (attr.bsShow) {
+            scope.$watch(attr.bsShow, function(newValue, oldValue) {
+              if (!dropdown || !angular.isDefined(newValue)) return;
+              if (angular.isString(newValue)) newValue = !!newValue.match(/true|,?(dropdown),?/i);
+              if (newValue === true) {
+                dropdown.show();
+              } else {
+                dropdown.hide();
+              }
+            });
+          }
+          scope.$on('$destroy', function() {
+            if (dropdown) dropdown.destroy();
+            options = null;
+            dropdown = null;
+          });
+        };
+      }
+    };
+  } ]);
+  angular.module('mgcrea.ngStrap.button', []).provider('$bsButton', function() {
+    var defaults = this.defaults = {
+      activeClass: 'active',
+      toggleEvent: 'click'
+    };
+    this.$get = function() {
+      return {
+        defaults: defaults
+      };
+    };
+  }).directive('bsCheckboxGroup', function() {
+    return {
+      restrict: 'A',
+      require: 'ngModel',
+      compile: function postLink(element, attr) {
+        element.attr('data-toggle', 'buttons');
+        element.removeAttr('ng-model');
+        var children = element[0].querySelectorAll('input[type="checkbox"]');
+        angular.forEach(children, function(child) {
+          var childEl = angular.element(child);
+          childEl.attr('bs-checkbox', '');
+          childEl.attr('ng-model', attr.ngModel + '.' + childEl.attr('value'));
+        });
+      }
+    };
+  }).directive('bsCheckbox', ["$bsButton", "$$rAF", function($button, $$rAF) {
+    var defaults = $button.defaults;
+    var constantValueRegExp = /^(true|false|\d+)$/;
+    return {
+      restrict: 'A',
+      require: 'ngModel',
+      link: function postLink(scope, element, attr, controller) {
+        var options = defaults;
+        var isInput = element[0].nodeName === 'INPUT';
+        var activeElement = isInput ? element.parent() : element;
+        var trueValue = angular.isDefined(attr.trueValue) ? attr.trueValue : true;
+        if (constantValueRegExp.test(attr.trueValue)) {
+          trueValue = scope.$eval(attr.trueValue);
+        }
+        var falseValue = angular.isDefined(attr.falseValue) ? attr.falseValue : false;
+        if (constantValueRegExp.test(attr.falseValue)) {
+          falseValue = scope.$eval(attr.falseValue);
+        }
+        var hasExoticValues = typeof trueValue !== 'boolean' || typeof falseValue !== 'boolean';
+        if (hasExoticValues) {
+          controller.$parsers.push(function(viewValue) {
+            return viewValue ? trueValue : falseValue;
+          });
+          controller.$formatters.push(function(modelValue) {
+            return angular.equals(modelValue, trueValue);
+          });
+        }
+        controller.$render = function() {
+          var isActive = !!controller.$viewValue;
+          $$rAF(function() {
+            if (isInput) element[0].checked = isActive;
+            activeElement.toggleClass(options.activeClass, isActive);
+          });
+        };
+        element.bind(options.toggleEvent, function() {
+          scope.$apply(function() {
+            if (!isInput) {
+              controller.$setViewValue(!activeElement.hasClass('active'));
+            }
+            controller.$render();
+          });
+        });
+      }
+    };
+  } ]).directive('bsRadioGroup', function() {
+    return {
+      restrict: 'A',
+      require: 'ngModel',
+      compile: function postLink(element, attr) {
+        element.attr('data-toggle', 'buttons');
+        element.removeAttr('ng-model');
+        var children = element[0].querySelectorAll('input[type="radio"]');
+        angular.forEach(children, function(child) {
+          angular.element(child).attr('bs-radio', '');
+          angular.element(child).attr('ng-model', attr.ngModel);
+        });
+      }
+    };
+  }).directive('bsRadio', ["$bsButton", "$$rAF", function($button, $$rAF) {
+    var defaults = $button.defaults;
+    var constantValueRegExp = /^(true|false|\d+)$/;
+    return {
+      restrict: 'A',
+      require: 'ngModel',
+      link: function postLink(scope, element, attr, controller) {
+        var options = defaults;
+        var isInput = element[0].nodeName === 'INPUT';
+        var activeElement = isInput ? element.parent() : element;
+        var value;
+        attr.$observe('value', function(v) {
+          if (typeof v !== 'boolean' && constantValueRegExp.test(v)) {
+            value = scope.$eval(v);
+          } else {
+            value = v;
+          }
+          controller.$render();
+        });
+        controller.$render = function() {
+          var isActive = angular.equals(controller.$viewValue, value);
+          $$rAF(function() {
+            if (isInput) element[0].checked = isActive;
+            activeElement.toggleClass(options.activeClass, isActive);
+          });
+        };
+        element.bind(options.toggleEvent, function() {
+          scope.$apply(function() {
+            controller.$setViewValue(value);
+            controller.$render();
+          });
+        });
+      }
+    };
+  } ]);
   angular.module('mgcrea.ngStrap.datepicker', [ 'mgcrea.ngStrap.helpers.dateParser', 'mgcrea.ngStrap.helpers.dateFormatter', 'mgcrea.ngStrap.tooltip' ]).provider('$bsDatepicker', function() {
     var defaults = this.defaults = {
       animation: 'am-fade',
@@ -3281,7 +3448,8 @@
         scope.$hasToday = options.hasToday;
         scope.$hasClear = options.hasClear;
         var $picker = $datepicker.$views[scope.$mode];
-        scope.$select = function(date) {
+        scope.$select = function(date, disabled) {
+          if (disabled) return;
           $datepicker.select(date);
         };
         scope.$selectPane = function(value) {
@@ -3824,129 +3992,6 @@
       };
     } ];
   });
-  angular.module('mgcrea.ngStrap.button', []).provider('$bsButton', function() {
-    var defaults = this.defaults = {
-      activeClass: 'active',
-      toggleEvent: 'click'
-    };
-    this.$get = function() {
-      return {
-        defaults: defaults
-      };
-    };
-  }).directive('bsCheckboxGroup', function() {
-    return {
-      restrict: 'A',
-      require: 'ngModel',
-      compile: function postLink(element, attr) {
-        element.attr('data-toggle', 'buttons');
-        element.removeAttr('ng-model');
-        var children = element[0].querySelectorAll('input[type="checkbox"]');
-        angular.forEach(children, function(child) {
-          var childEl = angular.element(child);
-          childEl.attr('bs-checkbox', '');
-          childEl.attr('ng-model', attr.ngModel + '.' + childEl.attr('value'));
-        });
-      }
-    };
-  }).directive('bsCheckbox', ["$bsButton", "$$rAF", function($button, $$rAF) {
-    var defaults = $button.defaults;
-    var constantValueRegExp = /^(true|false|\d+)$/;
-    return {
-      restrict: 'A',
-      require: 'ngModel',
-      link: function postLink(scope, element, attr, controller) {
-        var options = defaults;
-        var isInput = element[0].nodeName === 'INPUT';
-        var activeElement = isInput ? element.parent() : element;
-        var trueValue = angular.isDefined(attr.trueValue) ? attr.trueValue : true;
-        if (constantValueRegExp.test(attr.trueValue)) {
-          trueValue = scope.$eval(attr.trueValue);
-        }
-        var falseValue = angular.isDefined(attr.falseValue) ? attr.falseValue : false;
-        if (constantValueRegExp.test(attr.falseValue)) {
-          falseValue = scope.$eval(attr.falseValue);
-        }
-        var hasExoticValues = typeof trueValue !== 'boolean' || typeof falseValue !== 'boolean';
-        if (hasExoticValues) {
-          controller.$parsers.push(function(viewValue) {
-            return viewValue ? trueValue : falseValue;
-          });
-          controller.$formatters.push(function(modelValue) {
-            return angular.equals(modelValue, trueValue);
-          });
-          scope.$watch(attr.ngModel, function(newValue, oldValue) {
-            controller.$render();
-          });
-        }
-        controller.$render = function() {
-          var isActive = angular.equals(controller.$modelValue, trueValue);
-          $$rAF(function() {
-            if (isInput) element[0].checked = isActive;
-            activeElement.toggleClass(options.activeClass, isActive);
-          });
-        };
-        element.bind(options.toggleEvent, function() {
-          scope.$apply(function() {
-            if (!isInput) {
-              controller.$setViewValue(!activeElement.hasClass('active'));
-            }
-            if (!hasExoticValues) {
-              controller.$render();
-            }
-          });
-        });
-      }
-    };
-  } ]).directive('bsRadioGroup', function() {
-    return {
-      restrict: 'A',
-      require: 'ngModel',
-      compile: function postLink(element, attr) {
-        element.attr('data-toggle', 'buttons');
-        element.removeAttr('ng-model');
-        var children = element[0].querySelectorAll('input[type="radio"]');
-        angular.forEach(children, function(child) {
-          angular.element(child).attr('bs-radio', '');
-          angular.element(child).attr('ng-model', attr.ngModel);
-        });
-      }
-    };
-  }).directive('bsRadio', ["$bsButton", "$$rAF", function($button, $$rAF) {
-    var defaults = $button.defaults;
-    var constantValueRegExp = /^(true|false|\d+)$/;
-    return {
-      restrict: 'A',
-      require: 'ngModel',
-      link: function postLink(scope, element, attr, controller) {
-        var options = defaults;
-        var isInput = element[0].nodeName === 'INPUT';
-        var activeElement = isInput ? element.parent() : element;
-        var value;
-        attr.$observe('value', function(v) {
-          if (typeof v !== 'boolean' && constantValueRegExp.test(v)) {
-            value = scope.$eval(v);
-          } else {
-            value = v;
-          }
-          controller.$render();
-        });
-        controller.$render = function() {
-          var isActive = angular.equals(controller.$modelValue, value);
-          $$rAF(function() {
-            if (isInput) element[0].checked = isActive;
-            activeElement.toggleClass(options.activeClass, isActive);
-          });
-        };
-        element.bind(options.toggleEvent, function() {
-          scope.$apply(function() {
-            controller.$setViewValue(value);
-            controller.$render();
-          });
-        });
-      }
-    };
-  } ]);
   angular.module('mgcrea.ngStrap.collapse', []).provider('$bsCollapse', function() {
     var defaults = this.defaults = {
       animation: 'am-collapse',
@@ -4293,7 +4338,8 @@
   angular.module('mgcrea.ngStrap.affix', [ 'mgcrea.ngStrap.helpers.dimensions', 'mgcrea.ngStrap.helpers.debounce' ]).provider('$bsAffix', function() {
     var defaults = this.defaults = {
       offsetTop: 'auto',
-      inlineStyles: true
+      inlineStyles: true,
+      setWidth: true
     };
     this.$get = ["$window", "bsDebounce", "bsDimensions", function($window, debounce, dimensions) {
       var bodyEl = angular.element($window.document.body);
@@ -4323,7 +4369,7 @@
         $affix.init = function() {
           this.$parseOffsets();
           initialOffsetTop = dimensions.offset(element[0]).top + initialAffixTop;
-          setWidth = !element[0].style.width;
+          setWidth = options.setWidth && !element[0].style.width;
           targetEl.on('scroll', this.checkPosition);
           targetEl.on('click', this.checkPositionWithEventLoop);
           windowEl.on('resize', this.$debouncedOnResize);
@@ -4385,9 +4431,11 @@
         };
         $affix.$debouncedOnResize = debounce($affix.$onResize, 50);
         $affix.$parseOffsets = function() {
-          var initialPosition = element.css('position');
+          var initialPosition = element[0].style.position;
+          var initialTop = element[0].style.top;
           if (options.inlineStyles) {
             element.css('position', options.offsetParent ? '' : 'relative');
+            element.css('top', '');
           }
           if (options.offsetTop) {
             if (options.offsetTop === 'auto') {
@@ -4413,6 +4461,7 @@
           }
           if (options.inlineStyles) {
             element.css('position', initialPosition);
+            element.css('top', initialTop);
           }
         };
         function getRequiredAffixClass(_unpin, position, elementHeight) {
@@ -4420,8 +4469,8 @@
           var scrollHeight = getScrollHeight();
           if (scrollTop <= offsetTop) {
             return 'top';
-          } else if (_unpin !== null && scrollTop + _unpin <= position.top) {
-            return 'middle';
+          } else if (_unpin !== null) {
+            return scrollTop + _unpin <= position.top ? 'middle' : 'bottom';
           } else if (offsetBottom !== null && position.top + elementHeight + initialAffixTop >= scrollHeight - offsetBottom) {
             return 'bottom';
           }
@@ -4438,7 +4487,7 @@
       }
       return AffixFactory;
     } ];
-  }).directive('bsAffix', ["$bsAffix", "$window", function($affix, $window) {
+  }).directive('bsAffix', ["$bsAffix", "$window", "$timeout", function($affix, $window, $timeout) {
     return {
       restrict: 'EAC',
       require: '^?bsAffixTarget',
@@ -4447,7 +4496,7 @@
           scope: scope,
           target: affixTarget ? affixTarget.$element : angular.element($window)
         };
-        angular.forEach([ 'offsetTop', 'offsetBottom', 'offsetParent', 'offsetUnpin', 'inlineStyles' ], function(key) {
+        angular.forEach([ 'offsetTop', 'offsetBottom', 'offsetParent', 'offsetUnpin', 'inlineStyles', 'setWidth' ], function(key) {
           if (angular.isDefined(attr[key])) {
             var option = attr[key];
             if (/true/i.test(option)) option = true;
@@ -4455,7 +4504,10 @@
             options[key] = option;
           }
         });
-        var affix = $affix(element, options);
+        var affix;
+        $timeout(function() {
+          affix = $affix(element, options);
+        });
         scope.$on('$destroy', function() {
           if (affix) affix.destroy();
           options = null;

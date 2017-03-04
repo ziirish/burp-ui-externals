@@ -21,7 +21,7 @@
     "jquery.fancytree": "fancytree#~2.17.0",
     "d3": "~3.5.6",
     "nvd3": "~1.8.1",
-    "lodash": "~2.4.2",
+    "lodash": "^4.17.4",
     "typeahead.js": "~0.11.1",
     "bootswatch": "~3.3.5",
     "angular-resource": "~1.4.7",
@@ -37,10 +37,15 @@
     "datatables.net-responsive-bs": "^2.1.0",
     "datatables.net": "^1.10.12",
     "datatables.net-bs": "^1.10.12",
-    "fullcalendar": "^3.1.0"
+    "fullcalendar": "^3.1.0",
+    "datatables.net-select-bs": "^1.2.1",
+    "datatables.net-buttons-bs": "^1.2.4"
   },
   "resolutions": {
     "angular": "~1.4.0",
-    "fullcalendar": "^3.1.0"
+    "fullcalendar": "^3.1.0",
+    "moment": ">=2.5.0",
+    "jquery": ">=1.6",
+    "lodash": "^4.17.4"
   }
 }
