@@ -18,7 +18,6 @@
     "angular-onbeforeunload": "~0.1.7",
     "angular-strap": "~2.3.3",
     "ui-select": "angular-ui-select#~0.13.2",
-    "jquery.fancytree": "fancytree#~2.17.0",
     "d3": "~3.5.6",
     "nvd3": "~1.8.1",
     "lodash": "^4.17.4",
@@ -41,7 +40,8 @@
     "datatables.net-select-bs": "^1.2.1",
     "datatables.net-buttons-bs": "^1.2.4",
     "socket.io-client": "^2.0.3",
-    "js-cookie": "^2.2.0"
+    "js-cookie": "^2.2.0",
+    "jquery.fancytree": "fancytree#^2.27.0"
   },
   "resolutions": {
     "angular": "~1.4.0",

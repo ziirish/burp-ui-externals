@@ -26,7 +26,6 @@ ul.fancytree-container {
   margin: 0;
   background-color: white;
   border: 1px dotted gray;
-  overflow: auto;
   min-height: 0%;
   position: relative;
 }
@@ -54,12 +53,20 @@ ul.fancytree-container li {
 ul.fancytree-container li.fancytree-lastsib {
   background-image: none;
 }
-ul.fancytree-no-connector > li {
-  background-image: none;
-}
 .ui-fancytree-disabled ul.fancytree-container {
   opacity: 0.5;
   background-color: silver;
+}
+ul.fancytree-connectors.fancytree-container li {
+  background-image: url("../skin-bootstrap-n/vline.gif");
+  background-position: 0 0;
+}
+ul.fancytree-container li.fancytree-lastsib,
+ul.fancytree-no-connector > li {
+  background-image: none;
+}
+li.fancytree-animating {
+  position: relative;
 }
 /*------------------------------------------------------------------------------
  * Common icon definitions
@@ -69,7 +76,6 @@ span.fancytree-vline,
 span.fancytree-expander,
 span.fancytree-icon,
 span.fancytree-checkbox,
-span.fancytree-radio,
 span.fancytree-drag-helper-img,
 #fancytree-drop-marker {
   width: 1em;
@@ -83,7 +89,6 @@ span.fancytree-drag-helper-img,
 span.fancytree-icon,
 span.fancytree-checkbox,
 span.fancytree-expander,
-span.fancytree-radio,
 span.fancytree-custom-icon {
   margin-top: 0px;
 }
@@ -123,6 +128,10 @@ span.fancytree-expander {
   background-image: none;
   cursor: default;
 }
+.fancytree-connectors .fancytree-exp-n span.fancytree-expander,
+.fancytree-connectors .fancytree-exp-nl span.fancytree-expander {
+  margin-top: 0;
+}
 /* Fade out expanders, when container is not hovered or active */
 .fancytree-fade-expander span.fancytree-expander {
   transition: opacity 1.5s;
@@ -146,11 +155,6 @@ span.fancytree-checkbox {
   filter: alpha(opacity=40);
 }
 /*------------------------------------------------------------------------------
- * Radiobutton icon
- * This is a customization, that may be activated by overriding the 'checkbox'
- * class name as 'fancytree-radio' in the tree options.
- *----------------------------------------------------------------------------*/
-/*------------------------------------------------------------------------------
  * Node type icon
  * Note: IE6 doesn't correctly evaluate multiples class names,
  *		 so we create combined class names that can be used in the CSS.
@@ -168,7 +172,7 @@ span.fancytree-icon {
 .fancytree-loading span.fancytree-expander:hover,
 .fancytree-statusnode-loading span.fancytree-icon,
 .fancytree-statusnode-loading span.fancytree-icon:hover {
-  background-image: url("loading.gif");
+  background-image: none;
 }
 /* Status node icons */
 /*------------------------------------------------------------------------------
@@ -242,6 +246,28 @@ span.fancytree-drag-source.fancytree-drag-remove {
   opacity: 0.15;
 }
 /*** Target node while dragging cursor is over it *****************************/
+/*------------------------------------------------------------------------------
+ * 'rtl' option
+ *----------------------------------------------------------------------------*/
+.fancytree-container.fancytree-rtl .fancytree-title {
+  /*unicode-bidi: bidi-override;*/
+  /* optional: reverse title letters */
+}
+.fancytree-container.fancytree-rtl .fancytree-exp-n span.fancytree-expander,
+.fancytree-container.fancytree-rtl .fancytree-exp-nl span.fancytree-expander {
+  background-image: none;
+}
+ul.fancytree-container.fancytree-rtl ul {
+  padding: 0 16px 0 0;
+}
+ul.fancytree-container.fancytree-rtl.fancytree-connectors li {
+  background-position: right 0;
+  background-image: url("../skin-bootstrap-n/vline-rtl.gif");
+}
+ul.fancytree-container.fancytree-rtl li.fancytree-lastsib,
+ul.fancytree-container.fancytree-rtl.fancytree-no-connector > li {
+  background-image: none;
+}
 /*------------------------------------------------------------------------------
  * 'table' extension
  *----------------------------------------------------------------------------*/
@@ -322,6 +348,15 @@ table.fancytree-ext-columnview .fancytree-has-children span.fancytree-cv-right {
   color: black;
   font-weight: normal;
 }
+/* Hide expanders if all child nodes are hidden by filter */
+.fancytree-ext-filter-hide-expanders tr.fancytree-match span.fancytree-expander,
+.fancytree-ext-filter-hide-expanders span.fancytree-node.fancytree-match span.fancytree-expander {
+  visibility: hidden;
+}
+.fancytree-ext-filter-hide-expanders tr.fancytree-submatch span.fancytree-expander,
+.fancytree-ext-filter-hide-expanders span.fancytree-node.fancytree-submatch span.fancytree-expander {
+  visibility: visible;
+}
 .fancytree-ext-childcounter span.fancytree-icon,
 .fancytree-ext-filter span.fancytree-icon {
   position: relative;
@@ -362,12 +397,48 @@ ul.fancytree-ext-wide span.fancytree-node span.fancytree-title {
   position: absolute;
   z-index: 1;
   left: 0px;
-  width: 100%;
+  min-width: 100%;
   margin-left: 0;
   margin-right: 0;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
+}
+/*------------------------------------------------------------------------------
+ * 'fixed' extension
+ *----------------------------------------------------------------------------*/
+.fancytree-ext-fixed-wrapper .fancytree-ext-fixed-hidden {
+  display: none;
+}
+.fancytree-ext-fixed-wrapper div.fancytree-ext-fixed-scroll-border-bottom {
+  border-bottom: 3px solid rgba(0, 0, 0, 0.75);
+}
+.fancytree-ext-fixed-wrapper div.fancytree-ext-fixed-scroll-border-right {
+  border-right: 3px solid rgba(0, 0, 0, 0.75);
+}
+.fancytree-ext-fixed-wrapper div.fancytree-ext-fixed-wrapper-tl {
+  position: absolute;
+  overflow: hidden;
+  z-index: 3;
+  top: 0px;
+  left: 0px;
+}
+.fancytree-ext-fixed-wrapper div.fancytree-ext-fixed-wrapper-tr {
+  position: absolute;
+  overflow: hidden;
+  z-index: 2;
+  top: 0px;
+}
+.fancytree-ext-fixed-wrapper div.fancytree-ext-fixed-wrapper-bl {
+  position: absolute;
+  overflow: hidden;
+  z-index: 2;
+  left: 0px;
+}
+.fancytree-ext-fixed-wrapper div.fancytree-ext-fixed-wrapper-br {
+  position: absolute;
+  overflow: scroll;
+  z-index: 1;
 }
 /*******************************************************************************
  * Styles specific to this skin.

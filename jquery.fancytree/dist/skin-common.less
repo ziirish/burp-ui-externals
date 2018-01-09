@@ -6,7 +6,7 @@
 
 // Variables (defaults, may be overwritten by the including .less files)
 @fancy-use-sprites: true;      // false: suppress all background images (i.e. icons)
-@fancy-hide-connectors: true;  // false: show vertical connector lines
+// @fancy-hide-connectors: true;  // false: show vertical connector lines
 
 @fancy-level-indent: 16px;
 @fancy-line-height: 16px;      // height of a nodes selection bar including borders
@@ -22,12 +22,18 @@
 
 // @fancy-line-ofs-top: (@fancy-line-height - @fancy-icon-height) / 2;
 
-@fancy-image-dir: ".";
+// webpack uses /dist/skin-common.less as root path
+// grunt-less uses /dist/skin-Xxx/ui.fancyree.less as root path
+// So we define our theme LESS files for webpack compatibility, i.e.
+// define the image path n every main LESS file instead of here.
+// Prefix may be set to "", "/", "./", or any other value
+// Note: this variable must be defined by the main LESS files:
+// @fancy-image-prefix: "";
 
 // Use 'url(...)' to link to the throbber image, or
 // use data-uri(...)' to inline the data in css instead:
-@fancy-loading-url: url("@{fancy-image-dir}/loading.gif");
-// @fancy-loading-url: data-uri("@{fancy-image-dir}/loading.gif");
+// @fancy-loading-url: url("@{fancy-image-prefix}loading.gif");
+@fancy-loading-url: data-uri("@{fancy-image-prefix}loading.gif");
 
 // Set to `true` to use `data-uri(...)` instead of a `url(...)` link:
 @fancy-inline-sprites: false;
@@ -48,10 +54,10 @@
 	background-image: none;
 }
 .setBgImageUrl(@url) when (@fancy-use-sprites) and not (@fancy-inline-sprites) {
-	background-image: url("@{fancy-image-dir}/@{url}");
+	background-image: url("@{fancy-image-prefix}@{url}");
 }
 .setBgImageUrl(@url) when (@fancy-use-sprites) and (@fancy-inline-sprites) {
-	background-image: data-uri("@{fancy-image-dir}/@{url}");
+	background-image: data-uri("@{fancy-image-prefix}@{url}");
 }
 .useSprite(@x, @y) when (@fancy-use-sprites){
 	.setBgPos(@x, @y);
@@ -85,7 +91,7 @@
  * Helpers
  *----------------------------------------------------------------------------*/
 // Redefine, in case jQuery-UI is not included
-.ui-helper-hidden { 
+.ui-helper-hidden {
 	display: none;
 }
 
@@ -101,7 +107,7 @@ ul.fancytree-container {
 	margin: 0; // DT issue 201
 	background-color: white;
 	border: 1px dotted gray;
-	overflow: auto;
+	// overflow: auto;  // ext-dnd5: otherwise this is always the scroll parent
 //	height: 100%; // DT issue 263, 470
 	min-height: 0%; // #192
 	position: relative; // #235
@@ -134,16 +140,31 @@ ul.fancytree-container {
 	}
 }
 
-// Suppress lines if level is fixed expanded (option minExpandLevel) 
+// Style, when control is disabled
+.ui-fancytree-disabled ul.fancytree-container {
+	opacity: 0.5;
+//	filter: alpha(opacity=50); // Yields a css warning
+	background-color: silver;
+}
+
+ul.fancytree-connectors.fancytree-container {
+	li {
+		// Use 'data-uri(...)' to embed the image into CSS instead of linking to 'loading.gif':
+		background-image: data-uri("@{fancy-image-prefix}vline.gif");
+		background-position: 0 0;
+	}
+}
+
+// Suppress lines for last child node
+ul.fancytree-container li.fancytree-lastsib,
+// Suppress lines if level is fixed expanded (option minExpandLevel)
 ul.fancytree-no-connector > li {
 	background-image: none;
 }
 
-// Style, when control is disabled
-.ui-fancytree-disabled ul.fancytree-container {
-	opacity: 0.5;
-//	filter: alpha(opacity=50); // Yields a css warning 
-	background-color: silver;
+// Fix jQuery UI 'blind' animation for jQuery UI (#717)
+li.fancytree-animating {
+	position: relative;
 }
 
 /*------------------------------------------------------------------------------
@@ -155,7 +176,7 @@ span.fancytree-vline,
 span.fancytree-expander,
 span.fancytree-icon,
 span.fancytree-checkbox,
-span.fancytree-radio,
+// span.fancytree-radio,
 span.fancytree-drag-helper-img,
 #fancytree-drop-marker {
 	width: @fancy-icon-width;
@@ -172,7 +193,7 @@ span.fancytree-drag-helper-img,
 span.fancytree-icon,
 span.fancytree-checkbox,
 span.fancytree-expander,
-span.fancytree-radio,
+// span.fancytree-radio,
 span.fancytree-custom-icon {
 	margin-top: @fancy-icon-ofs-top;
 }
@@ -217,18 +238,26 @@ span.fancytree-expander {
 
 // --- End nodes (use connectors instead of expanders)
 
-.fancytree-exp-n span.fancytree-expander, 
+.fancytree-exp-n span.fancytree-expander,
 .fancytree-exp-nl span.fancytree-expander {
-	.clearBgImage( @fancy-hide-connectors );
+	// .clearBgImage( @fancy-hide-connectors );
+	background-image: none;
 	cursor: default;
 }
-.fancytree-exp-n span.fancytree-expander,       // End-node, not last sibling
-.fancytree-exp-n span.fancytree-expander:hover {
-	.useSprite(0, 4);
-}
-.fancytree-exp-nl span.fancytree-expander,      // End-node, last sibling
-.fancytree-exp-nl span.fancytree-expander:hover {
-	.useSprite(1, 4);
+.fancytree-connectors {
+	.fancytree-exp-n span.fancytree-expander,
+	.fancytree-exp-nl span.fancytree-expander {
+		.setBgImageUrl("icons.gif");
+		margin-top: 0;
+	}
+	.fancytree-exp-n span.fancytree-expander,       // End-node, not last sibling
+	.fancytree-exp-n span.fancytree-expander:hover {
+		.useSprite(0, 4);
+	}
+	.fancytree-exp-nl span.fancytree-expander,      // End-node, last sibling
+	.fancytree-exp-nl span.fancytree-expander:hover {
+		.useSprite(1, 4);
+	}
 }
 
 // --- Collapsed
@@ -272,7 +301,7 @@ span.fancytree-expander {
 .fancytree-exp-edl span.fancytree-expander { // Expanded, delayed, last sibling
 	.useSprite(2, 6);
 }
-.fancytree-exp-el span.fancytree-expander:hover,  
+.fancytree-exp-el span.fancytree-expander:hover,
 .fancytree-exp-edl span.fancytree-expander:hover {
 	.useSprite(3, 6);
 }
@@ -300,15 +329,21 @@ span.fancytree-checkbox {
 	margin-left: @fancy-icon-spacing;
 	.useSprite(0, 2);
 	&:hover { .useSprite(1, 2); }
+	&.fancytree-radio { .useSprite(0, 3); }
+	&.fancytree-radio:hover { .useSprite(1, 3); }
 }
 .fancytree-partsel span.fancytree-checkbox {
 	.useSprite(4, 2);
 	&:hover { .useSprite(5, 2); }
+	&.fancytree-radio { .useSprite(4, 3); }
+	&.fancytree-radio:hover { .useSprite(5, 3); }
 }
 // selected after partsel, so it takes precedence:
 .fancytree-selected span.fancytree-checkbox {
 	.useSprite(2, 2);
 	&:hover { .useSprite(3, 2); }
+	&.fancytree-radio { .useSprite(2, 3); }
+	&.fancytree-radio:hover { .useSprite(3, 3); }
 }
 // Unselectable is dimmed, without hover effects
 .fancytree-unselectable {
@@ -324,35 +359,6 @@ span.fancytree-checkbox {
 	}
 	&.fancytree-selected span.fancytree-checkbox:hover {
 		.useSprite(2, 2);
-	}
-}
-
-/*------------------------------------------------------------------------------
- * Radiobutton icon
- * This is a customization, that may be activated by overriding the 'checkbox'
- * class name as 'fancytree-radio' in the tree options.
- *----------------------------------------------------------------------------*/
-
-.fancytree-radio {
-	span.fancytree-checkbox {
-		.useSprite(0, 3);
-		&:hover { .useSprite(1, 3); }
-	}
-	.fancytree-partsel span.fancytree-checkbox {
-		.useSprite(4, 3);
-		&:hover { .useSprite(5, 3); }
-	}
-	// Selected after partsel, so it takes precedence:
-	.fancytree-selected span.fancytree-checkbox {
-		.useSprite(2, 3);
-		&:hover { .useSprite(3, 3); }
-	}
-	// Unselectable is dimmed, without hover effects
-	.fancytree-unselectable {
-		span.fancytree-checkbox,
-		span.fancytree-checkbox:hover {
-			.useSprite(0, 3);
-		}
 	}
 }
 
@@ -452,7 +458,7 @@ span.fancytree-title {
 	// margin-left: @fancy-icon-spacing;
     border: @fancy-node-border-width solid transparent;  // avoid jumping, when a border is added on hover
     .rounded-corners(@fancy-node-border-radius);
-//  outline: 0; // @ Firefox, prevent dotted border after click 
+//  outline: 0; // @ Firefox, prevent dotted border after click
 // Set transparent border to prevent jumping when active node gets a border
 //	   (we can do this, because this theme doesn't use vertical lines)
 //	border: 1px solid white; // Note: 'transparent' would not work in IE6
@@ -546,6 +552,46 @@ span.fancytree-drop-reject {
 	// outline: 1px dotted #d9534f; // boostrap warning
 }
 
+
+/*------------------------------------------------------------------------------
+ * 'rtl' option
+ *----------------------------------------------------------------------------*/
+
+.fancytree-container.fancytree-rtl {
+	.fancytree-title {
+		/*unicode-bidi: bidi-override;*/ /* optional: reverse title letters */
+	}
+	span.fancytree-connector,
+	span.fancytree-expander,
+	span.fancytree-icon,
+	span.fancytree-drag-helper-img,
+	#fancytree-drop-marker {
+		.setBgImageUrl("icons-rtl.gif");
+	}
+	.fancytree-exp-n span.fancytree-expander,
+	.fancytree-exp-nl span.fancytree-expander {
+		background-image: none;
+	}
+	&.fancytree-connectors .fancytree-exp-n span.fancytree-expander,
+	&.fancytree-connectors .fancytree-exp-nl span.fancytree-expander {
+		.setBgImageUrl("icons-rtl.gif");
+	}
+}
+ul.fancytree-container.fancytree-rtl {
+	ul {
+		padding: 0 16px 0 0;
+	}
+	&.fancytree-connectors li {
+		background-position: right 0;
+		background-image: url("@{fancy-image-prefix}vline-rtl.gif");
+	}
+	// Suppress lines for last child node
+	li.fancytree-lastsib,
+	// Suppress lines if level is fixed expanded (option minExpandLevel)
+	&.fancytree-no-connector > li {
+		background-image: none;
+	}
+}
 
 /*------------------------------------------------------------------------------
  * 'table' extension
@@ -647,6 +693,17 @@ table.fancytree-ext-columnview {
 		font-weight: normal;
 	}
 }
+/* Hide expanders if all child nodes are hidden by filter */
+.fancytree-ext-filter-hide-expanders {
+	tr.fancytree-match span.fancytree-expander,
+	span.fancytree-node.fancytree-match span.fancytree-expander {
+		visibility: hidden;
+	}
+	tr.fancytree-submatch span.fancytree-expander,
+	span.fancytree-node.fancytree-submatch span.fancytree-expander {
+		visibility: visible;
+	}
+}
 
 .fancytree-ext-childcounter,
 .fancytree-ext-filter {
@@ -696,7 +753,7 @@ ul.fancytree-ext-wide {
 		position: absolute; // Allow left: 0. Note: prevents smooth dropdown animation
 		z-index: 1; // Behind expander and checkbox
 		left: 0px;
-		width: 100%;
+		min-width: 100%;
 		margin-left: 0;
 		margin-right: 0;
 
@@ -704,4 +761,44 @@ ul.fancytree-ext-wide {
 		-moz-box-sizing: border-box;
 		box-sizing: border-box;
 	}
+}
+
+/*------------------------------------------------------------------------------
+ * 'fixed' extension
+ *----------------------------------------------------------------------------*/
+
+.fancytree-ext-fixed-wrapper {
+    .fancytree-ext-fixed-hidden {
+        display: none;
+    }
+    div.fancytree-ext-fixed-scroll-border-bottom {
+        border-bottom: 3px solid rgba(0, 0, 0, 0.75);
+    }
+    div.fancytree-ext-fixed-scroll-border-right {
+        border-right: 3px solid rgba(0, 0, 0, 0.75);
+    }
+    div.fancytree-ext-fixed-wrapper-tl {
+        position: absolute;
+        overflow: hidden;
+        z-index: 3;
+        top: 0px;
+        left: 0px;
+    }
+    div.fancytree-ext-fixed-wrapper-tr {
+        position: absolute;
+        overflow: hidden;
+        z-index: 2;
+        top: 0px;
+    }
+    div.fancytree-ext-fixed-wrapper-bl {
+        position: absolute;
+        overflow: hidden;
+        z-index: 2;
+        left: 0px;
+    }
+    div.fancytree-ext-fixed-wrapper-br {
+        position: absolute;
+        overflow: scroll;
+        z-index: 1;
+    }
 }

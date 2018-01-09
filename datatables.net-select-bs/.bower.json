@@ -1,6 +1,6 @@
 {
   "name": "datatables.net-select-bs",
-  "description": "Select for DataTables with styling for [Bootstrap](http://getbootstrap.com/)",
+  "description": "Select for DataTables with styling for [Bootstrap 3](http://getbootstrap.com/)",
   "main": [
     "css/select.bootstrap.css"
   ],
@@ -35,15 +35,14 @@
   ],
   "homepage": "https://datatables.net",
   "license": "MIT",
-  "version": "1.2.1",
-  "_release": "1.2.1",
+  "version": "1.2.3",
+  "_release": "1.2.3",
   "_resolution": {
     "type": "version",
-    "tag": "1.2.1",
-    "commit": "f3dea86df9c7713f03463a72094f656ba1db4946"
+    "tag": "1.2.3",
+    "commit": "da51bd40963068955ff27d7118c8b3142f20a170"
   },
   "_source": "https://github.com/DataTables/Dist-DataTables-Select-Bootstrap.git",
   "_target": "^1.2.1",
-  "_originalSource": "datatables.net-select-bs",
-  "_direct": true
+  "_originalSource": "datatables.net-select-bs"
 }

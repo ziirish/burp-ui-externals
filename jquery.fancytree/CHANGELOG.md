@@ -1,14 +1,234 @@
-# 2.17.0-0 / Unreleased
+# 2.27.1-0 / Unreleased
   *
+
+# 2.27.0 / 2017-12-16
+  * **BREAKING CHANGES:**
+    - `node.type` is now a first-class property of FancytreeNode.
+      Node data `{..., type: "foo"}` is now available as `node.type` (before: `node.data.type`).
+    - The properties `tree.types` and `tree.columns` have been added to Fancytree.
+      If passed with source data, they are now available directly instead of
+      `tree.data.types` or `tree.data.columns`.
+  * **Support patterns for node types:**
+    - The properties `node.type` and `tree.types` are recommended to implement node-type
+      specific configuration ([details](https://github.com/mar10/fancytree/wiki/TutorialNodeTypes)).
+    - Event `data` argument contains `typeInfo == tree.types[node.type]`.
+  * **Improved ext-glyph:**
+    - [Added] support for ligature icons (e.g. [material icons](https://material.io/icons/)).
+    - [Added] `icon` option can now return a dict to create a ligature icon.
+  * **Improved tree.loadKeyPath():**
+    - [Added] support for a custom path segment matcher.
+      This allows to have key paths with segments other than `node.key`.
+    - [Improved] the returned deferred promise now triggers `progress()` events which can
+      be used instead of the callback.
+  * The property `tree.columns` was added to Fancytree. Currently only reserved as
+    recommended pattern to pass global meta-data for ext-table.
+  * [Added] ext-edit: new trigger mode `clickActive` for option `triggerStart: [...]`.
+  * [Added] #798 Tooltip support for icons (dynamic option `iconTooltip`).
+  * [Added] #808 Pass custom storage providers to ext-persist.
+  * [Improved] ext-table no longer needs empty tbody/tr if thead is present.
+  * [Fixed] #796 UMD requirements for node/CommonJS
+  * [Fixed] #803 jquery.fancytree.ui-deps.js does not override existing widgets.
+  * [Fixed] #815 `<mark>` element missing in filtered nodes (minified bundle, IE 11).
+  * [Fixed] #816 findNextNode() doesn't set default for 'startNode' argument.
+  * [Added] Material Design demo
+  * [Added] Demo for Fancytree inside a jquery-confirm popup
+  * [Changed] String representation is now `"FancytreeNode@_4[title='My name']"`
+  * [DEPRECATED] `tree.clearCookies()`. Use `tree.clearData()` instead.
+
+# 2.26.0 / 2017-11-04
+  * **BREAKING CHANGES:**
+    - [Fixed] #792 postProcess is now also called for non-Ajax sources.
+  * [Improved] LESS now compiles with webpack
+  * [Added] #791 ext-glyph support for radio buttons
+  * [Added] Color definitions for skin-awesome (taken from skin-lion)
+  * [Fixed] `$.ui.fancytree.getNode()` for ES6 environments
+  * [Fixed] #789 Wrong node is activated in IE, when clicking in unfocused container
+
+# 2.25.0 / 2017-10-31
+  * **BREAKING CHANGES:**
+    - The `dist/src/` folder was renamed to `dist/modules`.
+    - Some directories like `demo/` are no longer part of the npm install.
+  * **Improved Module Support and Distribution**<br>
+    - The `dist/` folder now includes a `modules/` directory with fancytree core
+      and all extensions.
+    - All modules have UMD wrappers with defined dependencies.
+    - Internal jQuery UI dependencies are deployed as module and implicitly loaded.
+    - `jquery.fancytree/dist/modules/jquery.fancytree` is defined as
+      package main module, so Fancytree can be included using a simple<br>
+      `fancytree = require('jquery.fancytree')`.<br>
+      See [the docs](https://github.com/mar10/fancytree/wiki/TutorialIntegration)
+      for details.
+    - All modules now return the
+      [$.ui.fancytree object](http://www.wwwendt.de/tech/fancytree/doc/jsdoc/Fancytree_Static.html).
+    - [Added] new static method `$.ui.fancytree.createTree(elem, opts)`
+  * [Added] Source map files for `jquery.fancytree-all-deps.min.js`
+  * [Added] New extension ext-fixed (work-in-progress, experimental)
+  * [Fixed] #767: Input inside table head not working
+  * [Fixed] #768: Can't use keyboard to select nodes when `checkbox` option is false
+  * [Fixed] #782: wide extension - padding is off when checkbox option is changed
+  * [Fixed] #787: Fix getEventTarget() for custom icons
+
+# 2.24.0 / 2017-08-26
+  * [Added] ext-glyph option `preset` (making the `map` option optional)
+  * [Fixed] Drop marker for ext-glyph + ext-dnd5
+  * [Fixed] #695: List AMD dependency on jQuery UI
+  * [Fixed] #735: Trying to set root node selected throws an error
+  * [Fixed] #740: Filtering must not consider escaped html entities
+  * [Fixed] #741: Passing an empty string ("") as filter calls clearFilter()
+  * [Fixed] #748: Drag start should not activate a node
+  * [Fixed] #761: ext-dnd5 throws exception when tree is empty
+  * [Fixed] #764: ext-filter breaks links
+  * Updated jsdoc to 3.5
+
+# 2.23.0 / 2017-05-27
+  * **The external dependency on jQuery UI was removed**.<br>
+    A new library `jquery.fancytree-all-deps.min.js` is now added to the
+    distribution. It includes all dependencies on jQuery UI, so the only
+    remaining external dependency is jQuery.<br>
+    Continue to use `jquery.fancytree-all.min.js` if jQuery UI is already
+    included anyway.
+
+  * **Refactored the select behavior**<br>
+    [details](https://github.com/mar10/fancytree/wiki/SpecSelect):
+    <!-- [details](https://github.com/mar10/fancytree/wiki#selection-and-checkboxes) -->
+    * [Added] Allow control of selection status propagation with new options:
+      `unselectable`, `unselectableIgnore`, `unselectableStatus`.
+    * [Added] node option `radiogroup` to enable single-select for child nodes
+    * [Added] option `opts.noEvents` to `setSelected(flag, opts)`
+    * [Improved] Option 'checkbox' can have the string value "radio" (only has
+      the visual effect of replacing the icon)
+
+  * **BREAKING CHANGES:**
+    * The `hideCheckbox` option was removed. Use `checkbox: false` instead.<br>
+      Note that the `<li class='hideCheckbox'>` is still parsed from input
+      HTML and converted accordingly.
+    * The optional modifier class `<div class='fancytree-radio'>` was removed.
+      This class was used on the *container* to turn all checkbox items into
+      radio buttons.<br>
+      Instead, this class is now added to `<span class="fancytree-checkbox fancytree-radio">`.
+      Use the `tree.checkox: "radio"` option to activate this for the whole tree.
+    * The callback signature for the `tree.tooltip` option has changed to
+      `tooltip(event, data)`
+
+  * [Improved] `aria` option is now on by default
+  * Use the new dynamic options pattern for
+    `checkbox`, `icon`, `tooltip`, `unselectable`, `unselectableIgnore`,
+    `unselectableStatus`.<br>
+    See also <a href="https://github.com/mar10/fancytree/wiki#dynamic-options">dynamic options</a>.
+  * [Added] New method `node.visitSiblings()`
+  * [Added] #730 ext-persist option `expandOpts` is passed to setExpanded()
+    Allows to suppress animation or event generation.
+
+# 2.22.5 / 2017-05-11
+ * [Improved] #709 experimental ext-ariagrid
+
+# 2.22.4 / 2017-05-06
+ * [Improved] #709 experimental ext-ariagrid
+
+# 2.22.3 / 2017-05-05
+ * [Improved] #709 experimental ext-ariagrid
+
+# 2.22.2 / 2017-04-29
+  * [Fixed] #729 Fix regression with addChild performance improvements (#708)
+
+# 2.22.1 / 2017-04-21
+  * [Fixed] #722 Fix regression with addChild performance improvements (#708)
+
+# 2.22.0 / 2017-04-11
+  * [Added] ext-dnd5 now part of standard distribution
+  * [Added] #693 ext-dnd/dnd5: configurable drop marker offset
+  * [Added] #616 ext-wide: configurable left padding
+  * [Added] New method $.ui.fancytree.evalOption()
+  * [Improved] #601 ext-filter: improve performance (don't render hidden nodes)
+  * [Improved] ext-contextMenu: disable keyboard while popup is open and restore focus
+  * [Improved] #701 ext-hotkeys: Prevent default behavior on hot key combination
+  * [Improved] #708 speedup improvement for addChildren
+  * [Fixed] #680 ext-dnd5: top level nodes not draggable
+  * [Fixed] #681 ext-table: exception when a lazy node has `children: []`
+  * [Fixed] #699 ext-dnd5: Icon remains after dnd is cancelled
+  * [Fixed] #702 $.ui.fancytree.getNode(jQuery)' for jQuery v3.x
+  * [Fixed] #706 Fix DND where fancytree-title span is not a direct child due to custom layouts
+  * [Fixed] #712 When clicking in a scrolled tree for the first time, focus is not set properly
+  * [Fixed] #716 ext-wide: animation 'jumps' (jQuery UI 1.12)
+  * [Fixed] #717, #719 expand/collapse shows displaced child nodes when scrolled (jQuery UI 1.12)
+  * Update demos to jQuery 3.2.1 / jQuery UI 1.12.1
+
+# 2.21.0 / 2017-01-15
+  * [Added] New extension 'ext-dnd5' (beta) for native HTML5 drag'n'drop support
+  * [Added] `rtl` option for right-to-left script support
+  * [Added] Add $.ui.fancytree.overrideMethod()
+  * [Added] hook `treeSetOption` allows extensions to update on option changes
+  * [Changed] standard CSS no longer defines `overflow: auto` for the container.
+    If the tree container has a fixed height, `overflow: auto` or `overflow: scroll`
+    should be added to make it scrollable.
+    (Otherwise this always would be the scroll parent for ext-dnd5.)
+  * [Improved] better support for initializing from embedded JSON using the
+    `data-type="json"` attribute
+  * [Fixed] corner case of #658 when ext-edit is loaded, but inactive
+  * [Fixed] #396 Don't load 'loading.gif' for glyph skins
+  * [Fixed] #675 ext-table: node.render(false) puts first node at end
+
+# 2.20.0 / 2016-11-13
+  * [Added] #419 `modifyChild` event. This event is also a good place to
+    implement auto sorting (#559)
+  * [Added] #419 node.triggerModifyChild() and node.triggerModify()
+  * [Added] #595 add custom node filter to `generateFormElements()`
+  * [Added] #610 `tree.tooltip` option allows automatic or custom tooltips
+  * [Added] #620 improved tooltip escaping to allow newlines
+  * [DEPRECATED] `removeNode` event. Listen for `modifyChild` with operation
+    'remove' instead (which is fired on the parent)
+  * [Improved] ThemeRoller theme
+  * [Improved] ext-filter
+    - #297 add filter option 'hideExpanders' to remove expanders if all child
+      nodes are hidden by filter
+    - Filter options and the `opts` argument of `filterNodes()` / `filterBranches()`
+      have been unified
+    - [Fixed] #230 themeroller theme compatible with ext-filter
+    - [Fixed] #528 autoCollapse option blocks filter's autoExpand option
+    - [Fixed] #529 Filter: Mark matching nodes even if parent was matched in branch mode
+    - [Fixed] #643 Exceptions in ext-filter if expression contains special chars
+    - [Fixed] #658 ext-filter does not work with ext-edit `editCreateNode()`
+  * [Improved] #656 WAI-ARIA support
+    - Set focus to first node on first tab-in
+    - Support [home] and [end] keys
+    - Set aria-activedescendant on container to active ID
+    - Set aria-multiselectable on container if selectMode != 1
+    - Set aria-treeitem, -selected, -expanded, on title span instead `<li>`
+  * [Fixed] #576 `loadKeyPath()` sometimes gets the root wrong
+  * [Fixed] #615 Drag & drop helper icons lose indentation with table extension
+  * [Fixed] #632 Tabbing is not working if there is an anchor tag in treeview
+  * [Fixed] #644 New nodes created with ext-edit, are hidden in filtered trees
+  * [Fixed] #647 ext-table: tree.render(true) does not discard existing markup
+  * [Fixed] #659 handling of function keys, when quicksearch is on
+  * Use QUnit 2.0
+
+# 2.19.0 / 2016-08-11
+  * [Added] #607 tree.enableUpdate() to temporarily disable rendering to improve
+    performance on bulk updates
+  * [Added] modifier class `.fancytree-connectors` to be set on container<br>
+    Note: Experimental! Not required for skin-xp and not compatible with ext-table
+  * [Added] #623 ext-edit: `data.originalEvent` is now passed to `beforeClose`
+  * [Fixed] #604 Set `source` option does not update tree
+  * [Fixed] #609 node.load(true); doesn't maintain expanded
+  * [Fixed] #621 Cannot focus embedded input controls
+  * [Improved] #611 Keyboard navigation honors autoScroll option
+  * Extensions inherit main version number
+
+# 2.18.0 / 2016-05-02
+  * [Added] #586 node.discardMarkup() (useful in  the `collapsed` event)
+  * [Added] #171 new option `.escapeTitles`
+  * [Added] new callback `.enhanceTitle()`
+  * [Fixed] #515 Html tags included in filter results
+  * [Fixed] #593 ext-dnd revert position fails for tables
 
 # 2.17.0 / 2016-04-11
   * [Added]  `node.addClass()`, `.removeClass()`, and `.toggleClass()`
-  * [Added] ext-filter: matcher-callback for `tree.filterNodes()` may now return 
+  * [Added] ext-filter: matcher-callback for `tree.filterNodes()` may now return
     `"branch"` and `"skip"`
   * [Added] ext-filter: new option`nodata` allows to configure a status node for
     empty results
-  * [Added] `digits` argument to `node.getIndexHier(separator, digits)`.
-  * [Added] tree option `.tabindex`, default is "0". Pass "" to resolve #577.
+  * [Added] `digits` argument to `node.getIndexHier(separator, digits)`
+  * [Added] tree option `.tabindex`, default is "0". Pass "" to resolve #577
   * [DEPRECATED] tree option `.tabbable`. Use `.tabindex` instead
   * [Added] New option `mode='firstChild'` for `node.moveTo()`
   * [Added] New option `digits=<int>` for `node.getIndexHier()`
@@ -19,7 +239,7 @@
 # 2.16.1 / 2016-03-18
   * [Added] ext-glyph: new icon for 'nodata' status nodes
   * [Fixed] #575 missing loading icon in non-bootstrap themes.<br>
-    Glyph themes now display status images in icon span (was expander span before).
+    Glyph themes now display status images in icon span (was expander span before)
 
 # 2.16.0 / 2016-03-16
   * [Added] ext-clones: new method node.setRefKey(refKey)
@@ -30,12 +250,12 @@
   * [Improved] status nodes don't have icons
   * [Improved] pass data argument to `source` callback
   * [Improved] Handle exceptions inside `postProcess`
-  * [Improved] #568 ext-dnd: Auto-expanding of collapsed nodes should also work 
+  * [Improved] #568 ext-dnd: Auto-expanding of collapsed nodes should also work
     when dropping is not allowed
   * [Improved] #567 ext-dnd: fix revert position
   * [Improved] #565 ext-dnd: fix intermediate display of wrong icon (sending 'over' after 'enter')
   * [Fixed] #569 node.navigate does not return a Promise object
-  * [Fixed] #563 `tree.reactivate(false)` sets fancytree-treefocus and `tree.reactivate(true)` 
+  * [Fixed] #563 `tree.reactivate(false)` sets fancytree-treefocus and `tree.reactivate(true)`
     doesn't set keyboard focus
   * [Fixed] #562 Node span tag leaks outside table cell
   * [Fixed] #526 tree.setFocus() does not set keyboard focus
@@ -54,7 +274,7 @@
   * [Added] new method `node.replaceWith()`
   * [Added] new type 'paging' for `node.statusNodeType`
   * [Added] #542 new method `node.getSelectedNodes()`
-  * [Added] Helper class `glyphicon-spin` to allow rotating loading icon with bootstrap
+  * [Added] Helper class `glyphicon-spin` to allow rotating loading icon with bootstrap3
   * [Improved] #356: serialize load requests
   * [Improved] #538: Be more robust if site css defines custom li:before
   * [Improved] ext-table: Define table row templates in `<tbody>`
@@ -66,7 +286,7 @@
     * [Added] `options.icon` option/callback.<br>
       Valid values are true, false, a string containing a class name or image
       url, or a callback returning that.
-    * [Changed] `node.icon` option. Valid values are true, false, or a string 
+    * [Changed] `node.icon` option. Valid values are true, false, or a string
       containing a class name or image url.<br>
       This option existed before, but was stored in the `node.data.icon` namespace,
       and did not accept class names.
@@ -79,21 +299,21 @@
   * [Fixed] #533 table-ext: nodeSetExpanded triggers redundant events
 
 # 2.13.0 / 2015-11-16
-  * [Changed] If a node is initalized as `lazy: true`, and `children: []`, 
+  * [Changed] If a node is initalized as `lazy: true`, and `children: []`,
     treat it as 'loaded leaf node'.<br>
-    This is consistent with a lazy node that has no children property at all (i.e. 
+    This is consistent with a lazy node that has no children property at all (i.e.
     `undefined`). This would issue a lazyLoad event and a resopnse of `[]` would
     mark the node as leaf node.
   * [Added] new function $.ui.fancytree.getTree()
   * [Added] ext-filter methods node.isMatched() and tree.isFilterActive()
   * [Added] CSS for ext-childcounter badges is now part of the standard themes
   * [Added] ext-childcounter method node.updateCounter()`
-  * [Fixed] #507 data-hideCheckbox="true" 
+  * [Fixed] #507 data-hideCheckbox="true"
   * [Fixed] #513 activeVisible option does not work on init
   * [Fixed] #516 ExtPersist requires cookie.js even when not using cookies
 
 # 2.12.0 / 2015-09-10
-  * [Changed] Documented `iconClass` callback and changed signature from 
+  * [Changed] Documented `iconClass` callback and changed signature from
     `iconClass(node)` to `iconClass(event, data)`
   * [Added] ext-dnd events `initHelper` and `updateHelper`
   * [Added] ext-dnd option `smartRevert`
@@ -132,7 +352,7 @@
     dist/skin-common.less
 
 # 2.10.0 / 2015-06-26 [YANKED]
-  * [Changed] #340: New dist folder layout: moved skin-* folders into src/ folder  
+  * [Changed] #340: New dist folder layout: moved skin-* folders into src/ folder
     (**Note:** this change was reverted in v2.10.1)
   * [Improved] Update to jQuery UI 1.11.4, jQuery 1.11.3
   * [Improved] #340: add `dist/skin-common.less` to fix theme imports
@@ -173,7 +393,7 @@
 
 # 2.7.0 / 2014-12-21
   * [CHANGED] Dropped `fx` option. Use `toggleEffect` instead.
-  * [CHANGED] 'win8' and 'bootstrap' skins where modified to highlight the 
+  * [CHANGED] 'win8' and 'bootstrap' skins where modified to highlight the
     title span instead of the node span, in order to be compatible with
     [ext-wide]. The original skins are available as 'skin-win8-n' and
     'skin-bootstrap-n' respectively.
@@ -187,7 +407,7 @@
   * [Fixed] #369 Suppress warning, when dropping top- on top-node
 
 # 2.6.0 / 2014-11-29
-  * [Added] Option `focusOnSelect` to set focus when node is checked by a mouse 
+  * [Added] Option `focusOnSelect` to set focus when node is checked by a mouse
     click (default: false)
   * [Added] `restore` event, sent after ext-persist has restored the tree state
   * [Improved] #359 Better navigation performance when skipping hidden nodes
@@ -200,7 +420,7 @@
   * [Added] quicksearch: navigate to next node by typing the first letters
   * [Improved] [ext-dnd] Make draggable helper and parent configurable
   * [Improved] #153 Add class `fancytree-unselectable` to respective nodes and
-    dimm unselectable checkboxes
+    dim unselectable checkboxes
   * [Improved] Update to jQuery 1.1.11, jQuery UI 1.11.2
   * [Improved] New mode 'firstChild' for node.addNode()
   * [Fixed] #324 Fix problem where minExpandLevel was not expanding root node
@@ -226,13 +446,13 @@
   * [Fixed] crash in scrollIntoView() when parent is `window`
   * [Fixed] #305 Checkbox doesn't show with Glyph + Table
   * [Fixed] #316 Fix hasChildren() when children = []
-  * [Fixed] #237 ajax LoadError not updated in StatusNode with Table ext
+  * [Fixed] #237 Ajax LoadError not updated in StatusNode with Table ext
   * [Fixed] #295 loadKeyPath with multiple paths
   * [DEPRECATED] node.isRoot(). Use node.isRootNode() instead
 
 # 2.3.0 / 2014-08-17
   * [CHANGED] renamed (undocumented) event 'loaderror' to 'loadError'
-  * [Added] postProcess now allows to signal error conditions (so it becomes easy to handle custom ajax response formats)
+  * [Added] postProcess now allows to signal error conditions (so it becomes easy to handle custom Ajax response formats)
   * [Added] node.setStatus()
   * [Added] ext-clones to the standard distribution.
   * [Improved] loadError allows to return `false` to prevent default handling
@@ -240,21 +460,20 @@
   * [Fixed] #257 Glyph expander sometimes disappears
 
 # 2.2.0 / 2014-06-28
-  * [Added] Option dnd.focusOnClick sets focus to tree widget, even when dragging 
+  * [Added] Option dnd.focusOnClick sets focus to tree widget, even when dragging
     is enabled
   * [Added] node.info()
   * [Improved] #245 tree.generateInput() now returns data using PHPs array
     convention, i.e. by appending brackets to the name: 'ft_1[]'.
-  * [Fixed] #250: Children lazy empty nodes remain checked when parent is 
+  * [Fixed] #250: Children lazy empty nodes remain checked when parent is
     unchecked with hierarchical multi-selection
   * [Fixed] #272 Navigation in filtered trees
-
 
 # 2.1.0 / 2014-05-29
   * [Added] #210: [ext-persist] optionally store information in sessionStorage or localStorage
   * [Added] #64 [ext-filter] filterBranches() will restrict display to sub-trees
   * [Added] New options 'scrollParent' and 'scrollOfs' are evaluated by node.scrollIntoView()
-    (which is also called on expand). This allows autoScroll to work with 
+    (which is also called on expand). This allows autoScroll to work with
     [ext-table]: set scrollParent to `window` or a wrapper DIV with  overflow: auto
   * [Added] [ext-wide] use 100% wide selection bar (experimental)
   * [Added] $.ui.fancytree.debounce()
@@ -270,146 +489,9 @@
   * [DEPRECATED] [ext-filter] Use filterNodes() instead of applyFilter()
   * [DEPRECATED] [ext-filter] 'leavesOnly' option removed (see filterNodes())
 
-
 # 2.0.0 / 2014-05-01
-  * [Added] [ext-clones] #213 New method Fancytree.changeRefKey()
-
-
-# 2.0.0-12 / 2014-04-29
-  * [Added] /dist/src folder contains uncompressed extensions for bower
-  * [Improved] cleanup
-
-
-# 2.0.0-11 / 2014-04-27
-  * [Added] /dist/jquery.fancytree-custom.min.js with AMD support
-  * [Added] #56: Allow to set special node.attributes from data-...
-  * [Added] #191: Allow to set additional tree.data attributes from <ul data-...>
-  * [Added] [ext-childcounter] #202: Allow lazy children count
-  * [Improved] #192: Removed 'height: 100%' for container (was introduced to fix 
-     an IE 9 bug, that now should be solved by 'min-height: 0%')
-  * [Improved] [ext-table] #93 renderColumns called for status nodes 
-    (added 'customStatus' option)
-  * [Improved] [ext-dnd] #196 Make draggable/droppable options configurable
-  * [Fixed] [ext-glyph] #194 Render noExpander icon from icon map for leaf nodes
-  * [Fixed] #197: Allow special characters in tooltips
-  * [Fixed] #68: renderStatus method doesn't render 'loading' status
-  * [Fixed] #201: originalEvent not passed along to activate callback
-  * [Fixed] [ext-glyph] compatible with ext-table
-
-
-# 2.0.0-10 / 2014-04-13
-  * [Added] New method node.appendSibling()
-  * [Improved] setExpanded resolves promise *after* scrollIntoView
-  * [Improved] Allow to return false in lazyLoad for manual loading.
-  * [Improved] [ext-table] trigger expand event *after* anPimations
-  * [Improved] [ext-gridnav] skips empty and merged cells
-  * [Improved] grunt build no longer depends on tabfix.py
-  * [Fixed] selectMode: 1 + "selected": true looks buggy
-
-
-# 2.0.0-9 / 2014-04-02
-  * [Added] New helper method $.ui.fancytree.escapeHtml().
-  * [Added] [ext-clones] new method node.reRegister(key, refKey)
-  * [Added] Support for bower.
-  * [Added] dist/ folder to repository
-  * [Improved] [ext-edit] handles `<`, `>`, ...
-  * [Improved] [ext-table] node.render(force) trigger renderColumns event
-  * [Fixed] [ext-table] #178 children are not displayed when filtering
-
-
-# 2.0.0-8 / 2014-04-01
-  * [FEATURE] #18: load lazy nodes, if initialized as 'expanded'.
-  * [FEATURE] #162: Optional parameter `noEvents` for node.setActive() and .setExpanded().
-  * [CHANGE] Prefixed all Less variables with '@fancy-' and introduced '@fancy-image-dir'.
-  * [CHANGE] 'loadChildren' event is now also triggered for initial tree load (before it was only triggered for lazy child nodes)
-  * [BUGFIX] #117: line height too large when using doctype xhtml
-  * [BUGFIX] #115: Fixed error when trying to drag table headers
-  * [BUGFIX] #163: lazy load throws error if autoscroll: true and result is empty
-  * [FEATURE] [ext-clones] (experimental) new extension that introduces 
-    `node.refKey`, which may occur multiple times in one tree (as opposed to `key`, 
-    which must be unique).
-    New methods `node.isClone()`, `node.getCloneList()` and `tree.getNodesByRef()`.
-    Optionally, clones are tagged wit the `fancytree-clone` class.
-  * [FEATURE] New option 'defaultKey'. This calback allows to generate keys while loading.
-  * build process creates /dist folder
-  * "bower install fancytree" delivers dist folder
-
-
-# 2.0.0-7 / 2014-03-09
-  * [BREAKING CHANGE] node.isStatusNode() is now a function (was a property before).
-    Added new property `node.statusNodeType`.
-  * [BREAKING CHANGE] Renamed ext-awesome to ext-glyph
-  * [DEPRECATION] Deprecated event `lazyload`, use `lazyLoad` (upper case L) instead.
-  * [DEPRECATION] Deprecated methods node.lazyLoad() and node.discard(). use load() and resetLazy() instead.
-  * [FEATURE] Added node.isUndefined(), isLoaded(), resetLazy(), load(), resetLazy()
-  * [FEATURE] [ext-persist] Added option `expandLazy` for recursive loading (still experimental).
-  * [FEATURE] [ext-filter] 'mode: hide' now works with ext-table (still experimental).
-  * [FEATURE] node.makeVisible() accepts options, scrolls into view, and returns a promise.
-  * [FEATURE] Sample xxl and bootstrap themes.
-  * [CHANGE] nodeRenderStatus() is now implicitly called by nodeRenderTitle().<br>
-    This also means that now all markup and css classes are finshed, when `renderNode` 
-    is fired.
-  * [CHANGE] Calling setExpanded() on a leaf node fires .done() (not .fail())
-  * [CHANGE] Removing the last child node collapses the parent; lazy nodes become empty (not undefined).
-
-
-# 2.0.0-6 / 2014-02-08
-
-  * [BREAKING CHANGE] Removed 'name' argument from `$.ui.fancytree.registerExtension()`
-    (now the extension object requires a 'name' property)
-  * [DEPRECATION]  Deprecated startEdit/endEdit to use editStart/editEnd
-  * [FEATURE] New method `tree._requireExtension()`
-  * [FEATURE] Fixed d'n'd for ext-table
-  * [FEATURE] New option `titlesTabbable`
-  * [FEATURE] New argument `opts` for setExpanded() and setActive()
-  * [BUGFIX] ext-edit: fixed loosing focus and made chainable
-  * [BUGFIX] ext-filter: fixed navigation for hidden nodes
-  * Added browser test matrix (saucelabs)
-
-
-# 2.0.0-5 / 2013-12-23
-
-  * [BREAKING CHANGE] Refactored drag'n'drop extension.
-    For example `dnd.onDrop(node)` --> `dnd.dragDrop(node, data)`.
-    See [[TutorialExtDnd]]
-  * [BREAKING CHANGE] Renamed `rencercolumns` event to `renderColumns`
-  * [BREAKING CHANGE] Renamed `fancytree-focused` class to `fancytree-treefocus` (container only)
-  * [FEATURE] Experimental `ext-gridnav` implents key navigation for tables.
-    Refactored keyboard handling. Keydown handlers are now bound to the container instead of document
-    (Co-work with Koloto)
-  * [FEATURE] Allow to return 'preventNav' in keydown event to prevent withput blocking keys in embedded input controls.
-  * [FEATURE] New method `node.navigate()` to support custom keyboard handlers
-  * [FEATURE] Refactored CSS style to use a common LESS template
-  * [FEATURE] Improvement of lazy load errors handling (Koloto, issue #87)
-  * [FEATURE] Allow to pass metadata with `source` on initialization
-  * [FEATURE] The edit extension is now beta
-  * [BUGFIX] Fixed BACKSPACE on top-level nodes
-  * [BUGFIX] Fixed #71, #75, #90, #104, #105
-  * Improved table render speed by 15%
-  * `grunt dev` combines `grunt server` + `grunt watch` (trigger jshint and
-    less on save)
-
-
-# 2.0.0-4 / 2013-10-14
-
-  * Misc. fixes
-
-
-# 2.0.0-3
-
-  * [BREAKING CHANGE] Changed extension syntax
-  * [FEATURE] Edit extension (alpha)
-
-
-# 2.0.0-2 / 2013-09-15
-
-  * [BREAKING CHANGE] Renamed `onCustomRender` to `renderTitle`.
-    `renderTitle`, `renderNode` and `createNode` events are only triggered as options callback (not DOM events), for performance reasons.
-  * [BREAKING CHANGE] Renamed `data.orgEvent` to `data.originalEvent`
-  * [BREAKING CHANGE] Renamed events to camelCase as suggested by the jQuery style guide (`rendernnode` -> `renderNode`, ...)
-  * See also [[WhatsNew]] since Dynatree 1.x in general.
-
+  * Released 2.0.0
 
 # 1.x
 
-* See [Dynatree](https://code.google.com/p/dynatree/)
+  * See [Dynatree](https://code.google.com/p/dynatree/)
