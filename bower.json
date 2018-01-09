@@ -40,7 +40,8 @@
     "fullcalendar": "^3.1.0",
     "datatables.net-select-bs": "^1.2.1",
     "datatables.net-buttons-bs": "^1.2.4",
-    "socket.io-client": "^2.0.3"
+    "socket.io-client": "^2.0.3",
+    "js-cookie": "^2.2.0"
   },
   "resolutions": {
     "angular": "~1.4.0",
