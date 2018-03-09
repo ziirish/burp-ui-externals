@@ -1,5 +1,23 @@
-# 2.27.1-0 / Unreleased
-  *
+# 2.28.0-0 / Unreleased
+  * [Added] New extension ext-multi (experimental).
+  * [Added] ext-dnd5 support for dragging multiple selected nodes.
+  * [Added] #830 support for Font Awesome 5 (ext-glyph preset).
+  * [Added] ext-glyph supports SVG icons.
+  * [Added] `icon` option supports `{html: "..."}` content (also available for glyph-ext mapping).
+  * [Added] New method tree.visitRows()
+  * [Added] New method tree.selectAll()
+  * [Added] New method node.isBelowOf()
+  * [Added] New extension ext-fixed (experimental).
+  * [Changed] Re-rename clearData() to clearPersistData()
+  * [Changed] #828 Re-scale debugLevel from 0:quiet to 4:verbose, allowing to suppress warnings
+    and even errors.
+  * [Added] CSS helper classes:<br>
+    `.fancytree-helper-disabled`<br>
+    `.fancytree-helper-hidden` (replaces `ui-helper-hidden`)<br>
+    `.fancytree-helper-indeterminate-cb`<br>
+    `fancytree-helper-spin` for icon animations (replaces `glyphicon-spin`)
+  * [Fixed] #819: ext-filter: Handle nodes without title.
+  * [Fixed] #835: ext-dnd5: Accept drop externals after drag.
 
 # 2.27.0 / 2017-12-16
   * **BREAKING CHANGES:**
@@ -33,7 +51,7 @@
   * [Added] Material Design demo
   * [Added] Demo for Fancytree inside a jquery-confirm popup
   * [Changed] String representation is now `"FancytreeNode@_4[title='My name']"`
-  * [DEPRECATED] `tree.clearCookies()`. Use `tree.clearData()` instead.
+  * [DEPRECATED] `tree.clearCookies()`. Use <del>`tree.clearData()`</del> `tree.clearPersistData()` instead.
 
 # 2.26.0 / 2017-11-04
   * **BREAKING CHANGES:**

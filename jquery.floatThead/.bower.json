@@ -34,15 +34,15 @@
   "dependencies": {
     "jquery": ">= 1.8.0"
   },
-  "version": "2.0.3",
-  "_release": "2.0.3",
+  "version": "2.1.1",
+  "_release": "2.1.1",
   "_resolution": {
     "type": "version",
-    "tag": "2.0.3",
-    "commit": "b1201f702994277b6b7a692692ffccad813cb26a"
+    "tag": "2.1.1",
+    "commit": "6eea4ccad2ae6fd48046b8cb459b270d581b9f7c"
   },
   "_source": "https://github.com/mkoryak/floatThead.git",
-  "_target": "^2.0.3",
-  "_originalSource": "floatThead",
+  "_target": "^2.1.1",
+  "_originalSource": "jquery.floatThead",
   "_direct": true
 }
